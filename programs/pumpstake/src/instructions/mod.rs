@@ -8,3 +8,5 @@ pub use buy::*;
 pub mod resolve_market;
 pub use initialize_pool::*;
 pub use resolve_market::*;
+pub mod roll_die_init;
+pub use roll_die_init::*;

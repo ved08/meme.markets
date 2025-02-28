@@ -7,7 +7,6 @@ declare_id!("5eYrZR3FJYiuoGG7YsjhZP97EPofN65zM4PeLtUW8ZL3");
 
 #[program]
 pub mod pumpstake {
-    use crate::instruction::DistributeFund;
 
     use super::*;
 
@@ -21,9 +20,22 @@ pub mod pumpstake {
     }
     pub fn create_prediction_market(
         ctx: Context<CreatePredictionMarket>,
-        type_of_market: u8,
-        details: PredictionMarket,
+        market_type: u8,
+        start_time: i64,
+        end_time: i64,
+        details: PredictionMarketParams,
     ) -> Result<()> {
+        ctx.accounts.create_prediction_market(
+            market_type,
+            start_time,
+            end_time,
+            details,
+            &ctx.bumps,
+        )?;
+        Ok(())
+    }
+    pub fn roll_die_init_accounts(ctx: Context<RollDieInit>) -> Result<()> {
+        ctx.accounts.roll_die_accounts_init()?;
         Ok(())
     }
     pub fn buy(ctx: Context<CreatePredictionMarket>) -> Result<()> {
