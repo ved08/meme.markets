@@ -38,6 +38,10 @@ pub mod pumpstake {
         ctx.accounts.roll_die_accounts_init()?;
         Ok(())
     }
+    pub fn coin_toss_init_accounts(ctx: Context<CoinTossInit>) -> Result<()> {
+        ctx.accounts.coin_toss_accounts_init()?;
+        Ok(())
+    }
     pub fn buy(ctx: Context<CreatePredictionMarket>) -> Result<()> {
         todo!()
     }

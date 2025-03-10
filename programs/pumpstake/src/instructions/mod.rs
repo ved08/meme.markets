@@ -10,3 +10,5 @@ pub use initialize_pool::*;
 pub use resolve_market::*;
 pub mod roll_die_init;
 pub use roll_die_init::*;
+pub mod coin_toss_init;
+pub use coin_toss_init::*;
