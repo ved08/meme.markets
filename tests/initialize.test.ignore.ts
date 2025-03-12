@@ -6,7 +6,6 @@ import { setupInitializeTest, initialize } from "./utils";
 describe("initialize test", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
     const owner = anchor.Wallet.local().payer;
-    console.log("owner: ", owner.publicKey.toString());
 
     const program = anchor.workspace.Pumpstake as Program<Pumpstake>;
 

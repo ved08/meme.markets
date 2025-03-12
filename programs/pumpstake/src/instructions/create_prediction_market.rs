@@ -24,9 +24,11 @@ impl<'info> CreatePredictionMarket<'info> {
         start_time: i64,
         end_time: i64,
         params: PredictionMarketParams,
+        seed: u64,
         bumps: &CreatePredictionMarketBumps,
     ) -> Result<()> {
         self.market.set_inner(PredictionMarket {
+            market_id: seed,
             bump: bumps.market,
             owner: self.signer.to_account_info().key(),
             market_type,

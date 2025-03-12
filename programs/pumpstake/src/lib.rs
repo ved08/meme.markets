@@ -3,6 +3,8 @@ mod instructions;
 use instructions::*;
 mod state;
 use state::*;
+mod error;
+use error::*;
 declare_id!("5eYrZR3FJYiuoGG7YsjhZP97EPofN65zM4PeLtUW8ZL3");
 
 #[program]
@@ -24,12 +26,14 @@ pub mod pumpstake {
         start_time: i64,
         end_time: i64,
         details: PredictionMarketParams,
+        seed: u64,
     ) -> Result<()> {
         ctx.accounts.create_prediction_market(
             market_type,
             start_time,
             end_time,
             details,
+            seed,
             &ctx.bumps,
         )?;
         Ok(())
@@ -42,8 +46,8 @@ pub mod pumpstake {
         ctx.accounts.coin_toss_accounts_init()?;
         Ok(())
     }
-    pub fn buy(ctx: Context<CreatePredictionMarket>) -> Result<()> {
-        todo!()
+    pub fn stake(ctx: Context<Stake>, option: u8, amount: u64) -> Result<()> {
+        ctx.accounts.place_bet(option, amount)
     }
     pub fn sell(ctx: Context<CreatePredictionMarket>) -> Result<()> {
         todo!()

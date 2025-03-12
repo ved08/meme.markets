@@ -17,6 +17,7 @@ impl Space for PredictionMarketParams {
 #[account]
 #[derive(InitSpace)]
 pub struct PredictionMarket {
+    pub market_id: u64,
     pub bump: u8,
     pub owner: Pubkey,
     pub market_type: u8,
@@ -24,4 +25,14 @@ pub struct PredictionMarket {
     pub end_time: i64,
     pub is_active: bool,
     pub data: PredictionMarketParams,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct Bet {
+    pub market_id: u64,
+    pub placed_at: i64,
+    pub bettor: Pubkey,
+    pub amount: u64,
+    pub option: u8,
 }

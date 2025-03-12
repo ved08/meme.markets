@@ -4,20 +4,20 @@ use anchor_lang::{
 };
 
 #[derive(Accounts)]
-#[instruction(seed: u64)]
+#[instruction(market_id: u64)]
 pub struct CoinTossInit<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"head", seed.to_le_bytes().as_ref(), payer.key().as_ref()],
+        seeds = [b"head", market_id.to_le_bytes().as_ref(), payer.key().as_ref()],
         bump
     )]
     pub vault_1: SystemAccount<'info>,
 
     #[account(
         mut,
-        seeds = [b"tail", seed.to_le_bytes().as_ref(), payer.key().as_ref()],
+        seeds = [b"tail", market_id.to_le_bytes().as_ref(), payer.key().as_ref()],
         bump
     )]
     pub vault_2: SystemAccount<'info>,
