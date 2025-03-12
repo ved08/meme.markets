@@ -11,8 +11,8 @@ pub struct CreatePredictionMarket<'info> {
         init,
         payer = signer,
         seeds = [b"market", signer.key().as_ref(), seed.to_le_bytes().as_ref()],
+        bump,
         space = 8 + PredictionMarket::INIT_SPACE,
-        bump
     )]
     pub market: Account<'info, PredictionMarket>,
     pub system_program: Program<'info, System>,
@@ -20,11 +20,11 @@ pub struct CreatePredictionMarket<'info> {
 impl<'info> CreatePredictionMarket<'info> {
     pub fn create_prediction_market(
         &mut self,
+        seed: u64,
         market_type: u8,
         start_time: i64,
         end_time: i64,
         params: PredictionMarketParams,
-        seed: u64,
         bumps: &CreatePredictionMarketBumps,
     ) -> Result<()> {
         self.market.set_inner(PredictionMarket {

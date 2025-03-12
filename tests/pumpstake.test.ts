@@ -3,7 +3,8 @@ import { Program, BN } from "@coral-xyz/anchor";
 import { Pumpstake } from "../target/types/pumpstake";
 import { randomBytes } from "crypto"
 describe("initialize program tests", () => {
-    anchor.setProvider(anchor.AnchorProvider.env());
+    const provider = anchor.AnchorProvider.env()
+    anchor.setProvider(provider);
     const owner = anchor.Wallet.local().payer;
 
     const program = anchor.workspace.Pumpstake as Program<Pumpstake>;
@@ -24,16 +25,19 @@ describe("initialize program tests", () => {
             [Buffer.from("market"), owner.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
             program.programId
         )
-        console.log(market.toBase58())
+        console.log("market: ", market.toBase58())
+        console.log("owner: ", owner.publicKey.toBase58())
         let startTime = new anchor.BN(Date.now())
         let endTime = new anchor.BN(Date.now() + 1000)
-        const tx = await program.methods.createPredictionMarket(10, startTime, endTime, marketParams, seed)
+        const tx = await program.methods.createPredictionMarket(seed, 10, startTime, endTime, marketParams)
             .accountsPartial({
                 signer: owner.publicKey,
                 market
             })
             .signers([owner])
-            .rpc()
-        console.log("Tx: ", tx)
+            .transaction()
+        tx.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash
+        tx.feePayer = owner.publicKey
+        console.log("Tx: ", tx.serializeMessage().toString("base64"))
     })
 })

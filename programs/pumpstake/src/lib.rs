@@ -22,18 +22,18 @@ pub mod pumpstake {
     }
     pub fn create_prediction_market(
         ctx: Context<CreatePredictionMarket>,
+        seed: u64,
         market_type: u8,
         start_time: i64,
         end_time: i64,
         details: PredictionMarketParams,
-        seed: u64,
     ) -> Result<()> {
         ctx.accounts.create_prediction_market(
+            seed,
             market_type,
             start_time,
             end_time,
             details,
-            seed,
             &ctx.bumps,
         )?;
         Ok(())
