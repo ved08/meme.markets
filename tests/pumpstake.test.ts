@@ -2,6 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program, BN } from "@coral-xyz/anchor";
 import { Pumpstake } from "../target/types/pumpstake";
 import { randomBytes } from "crypto"
+import { am } from "@raydium-io/raydium-sdk-v2/lib/api-373aef5f";
 describe("initialize program tests", () => {
     const provider = anchor.AnchorProvider.env()
     anchor.setProvider(provider);
@@ -18,9 +19,51 @@ describe("initialize program tests", () => {
         website: "x.com",
         telegram: "telegram.org",
     }
-    let seed = new anchor.BN(100)
+    let seed = new anchor.BN(randomBytes(8))
+    async function confirmTransaction(
+        connection: anchor.web3.Connection,
+        signature: anchor.web3.TransactionSignature,
+        desiredConfirmationStatus: anchor.web3.TransactionConfirmationStatus = 'confirmed',
+        timeout: number = 30000,
+        pollInterval: number = 1000,
+        searchTransactionHistory: boolean = false
+    ): Promise<anchor.web3.SignatureStatus> {
+        const start = Date.now();
 
-    it("create a new market", async () => {
+        while (Date.now() - start < timeout) {
+            const { value: statuses } = await connection.getSignatureStatuses([signature], { searchTransactionHistory });
+
+            if (!statuses || statuses.length === 0) {
+                throw new Error('Failed to get signature status');
+            }
+
+            const status = statuses[0];
+
+            if (status === null) {
+                // If status is null, the transaction is not yet known
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+                continue;
+            }
+
+            if (status.err) {
+                throw new Error(`Transaction failed: ${JSON.stringify(status.err)}`);
+            }
+
+            if (status.confirmationStatus && status.confirmationStatus === desiredConfirmationStatus) {
+                return status;
+            }
+
+            if (status.confirmationStatus === 'finalized') {
+                return status;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+        }
+
+        throw new Error(`Transaction confirmation timeout after ${timeout}ms`);
+    }
+
+    it("can create a new coin toss market", async () => {
         let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
             [Buffer.from("market"), owner.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
             program.programId
@@ -29,15 +72,90 @@ describe("initialize program tests", () => {
         console.log("owner: ", owner.publicKey.toBase58())
         let startTime = new anchor.BN(Date.now())
         let endTime = new anchor.BN(Date.now() + 1000)
-        const tx = await program.methods.createPredictionMarket(seed, 10, startTime, endTime, marketParams)
+        const ix1 = await program.methods.createPredictionMarket(seed, 10, startTime, endTime, marketParams)
             .accountsPartial({
                 signer: owner.publicKey,
                 market
             })
-            .signers([owner])
-            .transaction()
-        tx.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash
-        tx.feePayer = owner.publicKey
-        console.log("Tx: ", tx.serializeMessage().toString("base64"))
+            .instruction()
+        const headVault = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("head"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+            program.programId
+        )[0]
+        const tailVault = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("tail"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+            program.programId
+        )[0]
+        const ix2 = await program.methods.coinTossInitAccounts(seed).accountsPartial({
+            payer: owner.publicKey,
+            vault1: headVault,
+            vault2: tailVault,
+
+        }).instruction()
+        const instructions: anchor.web3.TransactionInstruction[] = [
+            ix1, ix2
+        ]
+        let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
+        const messageV0 = new anchor.web3.TransactionMessage({
+            payerKey: owner.publicKey,
+            recentBlockhash: blockhash,
+            instructions: instructions
+        }).compileToV0Message()
+        const transaction = new anchor.web3.VersionedTransaction(messageV0)
+        transaction.sign([owner])
+        const tx = await provider.connection.sendTransaction(transaction)
+        const confirmation = await confirmTransaction(provider.connection, tx)
+        if (confirmation.err) { throw new Error("   ❌ - Transaction not confirmed.") }
+        console.log("Tx: ", tx)
+    })
+    it("can stake on heads", async () => {
+        let betId = new anchor.BN(randomBytes(8))
+        let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("market"), owner.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )
+        const headVault = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("head"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+            program.programId
+        )[0]
+        const bet = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )[0]
+        const option = 0
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 10)
+        const tx = await program.methods.stake(betId, option, amount)
+            .accountsPartial({
+                signer: owner.publicKey,
+                market: market,
+                vault: headVault,
+                bet: bet
+            }).signers([owner]).rpc()
+        console.log("Sucessfully staked on heads: ", tx)
+    })
+    it("can stake on tails", async () => {
+        let betId = new anchor.BN(randomBytes(8))
+        let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("market"), owner.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )
+        const tailVault = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("tail"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+            program.programId
+        )[0]
+        const bet = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )[0]
+        const option = 0
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 5)
+        const tx = await program.methods.stake(betId, option, amount)
+            .accountsPartial({
+                signer: owner.publicKey,
+                market: market,
+                vault: tailVault,
+                bet: bet
+            }).signers([owner]).rpc()
+        console.log("Sucessfully staked on tails: ", tx)
     })
 })

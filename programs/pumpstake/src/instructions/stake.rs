@@ -6,24 +6,25 @@ use anchor_lang::{
 };
 
 #[derive(Accounts)]
-#[instruction(seed: u64)]
+#[instruction(bet_id: u64)]
 pub struct Stake<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
-        seeds = [b"market", signer.key().as_ref(), seed.to_le_bytes().as_ref()],
+        seeds = [b"market", signer.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
     #[account(
         init,
         payer = signer,
-        seeds = [b"bet", market.key().as_ref(), signer.key().as_ref()],
+        seeds = [b"bet", market.key().as_ref(), signer.key().as_ref(), bet_id.to_le_bytes().as_ref()],
         space = 8 + Bet::INIT_SPACE,
         bump
     )]
     pub bet: Account<'info, Bet>,
     ///CHECK: the vault will be derived in frontend as there are multiple options
+    #[account(mut)]
     pub vault: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }

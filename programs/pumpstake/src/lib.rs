@@ -42,11 +42,11 @@ pub mod pumpstake {
         ctx.accounts.roll_die_accounts_init()?;
         Ok(())
     }
-    pub fn coin_toss_init_accounts(ctx: Context<CoinTossInit>) -> Result<()> {
+    pub fn coin_toss_init_accounts(ctx: Context<CoinTossInit>, market_id: u64) -> Result<()> {
         ctx.accounts.coin_toss_accounts_init()?;
         Ok(())
     }
-    pub fn stake(ctx: Context<Stake>, option: u8, amount: u64) -> Result<()> {
+    pub fn stake(ctx: Context<Stake>, bet_id: u64, option: u8, amount: u64) -> Result<()> {
         ctx.accounts.place_bet(option, amount)
     }
     pub fn sell(ctx: Context<CreatePredictionMarket>) -> Result<()> {
