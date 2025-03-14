@@ -24,6 +24,7 @@ pub struct PredictionMarket {
     pub start_time: i64,
     pub end_time: i64,
     pub is_active: bool,
+    pub winner: Pubkey,
     pub data: PredictionMarketParams,
 }
 
@@ -34,5 +35,5 @@ pub struct Bet {
     pub placed_at: i64,
     pub bettor: Pubkey,
     pub amount: u64,
-    pub option: u8,
+    pub option: Pubkey,
 }

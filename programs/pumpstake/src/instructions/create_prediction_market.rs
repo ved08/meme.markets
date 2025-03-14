@@ -36,6 +36,7 @@ impl<'info> CreatePredictionMarket<'info> {
             end_time,
             is_active: true,
             data: params,
+            winner: Pubkey::default(),
         });
         Ok(())
     }

@@ -122,9 +122,8 @@ describe("initialize program tests", () => {
             [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
-        const option = 0
         const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 10)
-        const tx = await program.methods.stake(betId, option, amount)
+        const tx = await program.methods.stake(betId, amount)
             .accountsPartial({
                 signer: owner.publicKey,
                 market: market,
@@ -147,9 +146,8 @@ describe("initialize program tests", () => {
             [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
-        const option = 0
         const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 5)
-        const tx = await program.methods.stake(betId, option, amount)
+        const tx = await program.methods.stake(betId, amount)
             .accountsPartial({
                 signer: owner.publicKey,
                 market: market,

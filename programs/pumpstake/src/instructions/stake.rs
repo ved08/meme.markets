@@ -29,7 +29,7 @@ pub struct Stake<'info> {
     pub system_program: Program<'info, System>,
 }
 impl<'info> Stake<'info> {
-    pub fn place_bet(&mut self, option: u8, amount: u64) -> Result<()> {
+    pub fn place_bet(&mut self, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
         let timestamp = clock.unix_timestamp;
         require!(
@@ -41,7 +41,7 @@ impl<'info> Stake<'info> {
             placed_at: timestamp,
             bettor: self.signer.to_account_info().key(),
             amount,
-            option,
+            option: self.vault.key(),
         });
         let accounts = Transfer {
             from: self.signer.to_account_info(),

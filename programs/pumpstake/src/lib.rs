@@ -46,8 +46,8 @@ pub mod pumpstake {
         ctx.accounts.coin_toss_accounts_init()?;
         Ok(())
     }
-    pub fn stake(ctx: Context<Stake>, bet_id: u64, option: u8, amount: u64) -> Result<()> {
-        ctx.accounts.place_bet(option, amount)
+    pub fn stake(ctx: Context<Stake>, bet_id: u64, amount: u64) -> Result<()> {
+        ctx.accounts.place_bet(amount)
     }
     pub fn sell(ctx: Context<CreatePredictionMarket>) -> Result<()> {
         todo!()
