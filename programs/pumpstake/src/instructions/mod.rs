@@ -12,3 +12,5 @@ pub mod roll_die_init;
 pub use roll_die_init::*;
 pub mod coin_toss_init;
 pub use coin_toss_init::*;
+pub mod claim_reward;
+pub use claim_reward::*;

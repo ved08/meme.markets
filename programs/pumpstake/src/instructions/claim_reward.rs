@@ -1,9 +1,12 @@
 use anchor_lang::prelude::*;
 
-use crate::{error::PumpstakeErrors, state::PredictionMarket};
+use crate::{
+    error::PumpstakeErrors,
+    state::{Bet, PredictionMarket},
+};
 
 #[derive(Accounts)]
-pub struct ResolveMarket<'info> {
+struct ClaimReward<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
@@ -12,14 +15,14 @@ pub struct ResolveMarket<'info> {
     )]
     pub market: Account<'info, PredictionMarket>,
     #[account(mut)]
-    /// CHECK: this will be provided in frontend
-    pub winner: UncheckedAccount<'info>,
+    pub bet: Account<'info, Bet>,
 }
-impl<'info> ResolveMarket<'info> {
-    pub fn resolve_winner(&mut self) -> Result<()> {
+
+impl<'info> ClaimReward<'info> {
+    pub fn claim_reward(&mut self) -> Result<()> {
         require_keys_eq!(
-            self.market.owner,
-            self.signer.to_account_info().key(),
+            self.signer.key(),
+            self.market.owner.key(),
             PumpstakeErrors::NotAuthorized
         );
         let timestamp = Clock::get().unwrap().unix_timestamp;
@@ -27,8 +30,14 @@ impl<'info> ResolveMarket<'info> {
             self.market.end_time <= timestamp,
             PumpstakeErrors::MarketActive
         );
-        self.market.is_active = false;
-        self.market.winner = self.winner.key();
+        require!(
+            self.market.is_active == false,
+            PumpstakeErrors::MarketActive
+        );
+        if self.bet.option.eq(&self.market.winner) {
+            // Distribute funds here or calculate for raydium
+        }
+
         Ok(())
     }
 }
