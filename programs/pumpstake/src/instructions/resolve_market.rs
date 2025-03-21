@@ -11,12 +11,9 @@ pub struct ResolveMarket<'info> {
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
-    #[account(mut)]
-    /// CHECK: this will be provided in frontend
-    pub winner: UncheckedAccount<'info>,
 }
 impl<'info> ResolveMarket<'info> {
-    pub fn resolve_winner(&mut self) -> Result<()> {
+    pub fn resolve_winner(&mut self, option: u8) -> Result<()> {
         require_keys_eq!(
             self.market.owner,
             self.signer.to_account_info().key(),
@@ -28,7 +25,7 @@ impl<'info> ResolveMarket<'info> {
             PumpstakeErrors::MarketActive
         );
         self.market.is_active = false;
-        self.market.winner = self.winner.key();
+        self.market.winner = option;
         Ok(())
     }
 }

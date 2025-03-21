@@ -1,5 +1,5 @@
 use crate::error::*;
-use crate::state::{Bet, PredictionMarket};
+use crate::state::{Bet, BettingOption, PredictionMarket};
 use anchor_lang::{
     prelude::*,
     system_program::{transfer, Transfer},
@@ -23,13 +23,10 @@ pub struct Stake<'info> {
         bump
     )]
     pub bet: Account<'info, Bet>,
-    ///CHECK: the vault will be derived in frontend as there are multiple options
-    #[account(mut)]
-    pub vault: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 impl<'info> Stake<'info> {
-    pub fn place_bet(&mut self, amount: u64) -> Result<()> {
+    pub fn place_bet(&mut self, option: u8, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
         let timestamp = clock.unix_timestamp;
         require!(
@@ -41,14 +38,23 @@ impl<'info> Stake<'info> {
             placed_at: timestamp,
             bettor: self.signer.to_account_info().key(),
             amount,
-            option: self.vault.key(),
+            option,
         });
+        let option = self
+            .market
+            .market_options
+            .iter_mut()
+            .find(|opt| opt.option_id == option)
+            .unwrap();
+        option.liquidity.checked_add(amount).unwrap();
+
         let accounts = Transfer {
             from: self.signer.to_account_info(),
-            to: self.vault.to_account_info(),
+            to: self.market.to_account_info(),
         };
         let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
         transfer(ctx, amount)?;
+        self.market.total_mc.checked_add(amount).unwrap();
         Ok(())
     }
 }

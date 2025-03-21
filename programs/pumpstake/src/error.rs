@@ -8,4 +8,6 @@ pub enum PumpstakeErrors {
     MarketActive,
     #[msg("Not authorized to execute the instruction")]
     NotAuthorized,
+    #[msg("Number of options exceed max options")]
+    MaxOptionsExceeded,
 }

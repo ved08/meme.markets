@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::native_token::LAMPORTS_PER_SOL};
 
 use crate::{
     error::PumpstakeErrors,
@@ -36,6 +36,11 @@ impl<'info> ClaimReward<'info> {
         );
         if self.bet.option.eq(&self.market.winner) {
             // Distribute funds here or calculate for raydium
+            if self.market.total_mc < 100 * LAMPORTS_PER_SOL {
+                // refund process
+            } else {
+                // create an amm
+            }
         }
 
         Ok(())
