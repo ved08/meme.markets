@@ -1,3 +1,4 @@
+// INTEGRATE amm creation here only
 use anchor_lang::prelude::*;
 
 use crate::{error::PumpstakeErrors, state::PredictionMarket};

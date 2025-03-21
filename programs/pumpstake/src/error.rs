@@ -10,4 +10,6 @@ pub enum PumpstakeErrors {
     NotAuthorized,
     #[msg("Number of options exceed max options")]
     MaxOptionsExceeded,
+    #[msg("Bettor pubkey and reciever dont match")]
+    IncorrectReceivor,
 }
