@@ -14,13 +14,13 @@ describe("initialize program tests", () => {
         ticker: "Test",
         name: "Hello",
         image: "test",
-        description: "yoooo",
+        description: "who will win the US election", // This is the question
         twitter: "x.com",
         website: "x.com",
         telegram: "telegram.org",
     }
-    let seed = new anchor.BN(randomBytes(8))
-    let seed2 = new anchor.BN(randomBytes(8))
+    let seed = new anchor.BN(randomBytes(8)) // this is for coin toss bet
+    let seed2 = new anchor.BN(randomBytes(8)) // this is for 5 options bet(polymarket)
     async function confirmTransaction(
         connection: anchor.web3.Connection,
         signature: anchor.web3.TransactionSignature,
