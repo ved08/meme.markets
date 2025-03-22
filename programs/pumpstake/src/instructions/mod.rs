@@ -14,3 +14,5 @@ pub mod coin_toss_init;
 pub use coin_toss_init::*;
 pub mod claim_reward;
 pub use claim_reward::*;
+pub mod create_bet_amm;
+pub use create_bet_amm::*;

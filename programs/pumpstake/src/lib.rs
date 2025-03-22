@@ -5,6 +5,8 @@ mod state;
 use state::*;
 mod error;
 use error::*;
+mod utils;
+use utils::*;
 declare_id!("5eYrZR3FJYiuoGG7YsjhZP97EPofN65zM4PeLtUW8ZL3");
 
 #[program]
