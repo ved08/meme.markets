@@ -4,8 +4,6 @@ use anchor_lang::constant;
 pub const MAX_OPTIONS: u8 = 8;
 
 #[constant]
-pub const CP_RATIO: u64 = 2_000_000_000_000;
-#[constant]
 pub const INITIAL_SOL_CAP: u64 = 2000;
 #[constant]
 pub const BILLION: u64 = 1_000_000_000;

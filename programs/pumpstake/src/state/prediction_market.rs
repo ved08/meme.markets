@@ -35,6 +35,7 @@ pub struct PredictionMarket {
 #[account]
 #[derive(InitSpace)]
 pub struct Bet {
+    pub bet_id: u64,
     pub market_id: u64,
     pub placed_at: i64,
     pub bettor: Pubkey,

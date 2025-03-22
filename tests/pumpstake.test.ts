@@ -20,6 +20,7 @@ describe("initialize program tests", () => {
         telegram: "telegram.org",
     }
     let seed = new anchor.BN(randomBytes(8))
+    let seed2 = new anchor.BN(randomBytes(8))
     async function confirmTransaction(
         connection: anchor.web3.Connection,
         signature: anchor.web3.TransactionSignature,
@@ -72,28 +73,29 @@ describe("initialize program tests", () => {
         console.log("owner: ", owner.publicKey.toBase58())
         let startTime = new anchor.BN(Date.now())
         let endTime = new anchor.BN(Date.now() + 1000)
-        const ix1 = await program.methods.createPredictionMarket(seed, 10, startTime, endTime, marketParams)
+        let totalOptions = 2 // number of options for coin toss is 2
+        const ix1 = await program.methods.createPredictionMarket(seed, totalOptions, startTime, endTime, marketParams)
             .accountsPartial({
                 signer: owner.publicKey,
                 market
             })
             .instruction()
-        const headVault = anchor.web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("head"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
-            program.programId
-        )[0]
-        const tailVault = anchor.web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("tail"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
-            program.programId
-        )[0]
-        const ix2 = await program.methods.coinTossInitAccounts(seed).accountsPartial({
-            payer: owner.publicKey,
-            vault1: headVault,
-            vault2: tailVault,
+        // const headVault = anchor.web3.PublicKey.findProgramAddressSync(
+        //     [Buffer.from("head"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+        //     program.programId
+        // )[0]
+        // const tailVault = anchor.web3.PublicKey.findProgramAddressSync(
+        //     [Buffer.from("tail"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+        //     program.programId
+        // )[0]
+        // const ix2 = await program.methods.coinTossInitAccounts(seed).accountsPartial({
+        //     payer: owner.publicKey,
+        //     vault1: headVault,
+        //     vault2: tailVault,
 
-        }).instruction()
+        // }).instruction()
         const instructions: anchor.web3.TransactionInstruction[] = [
-            ix1, ix2
+            ix1
         ]
         let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
         const messageV0 = new anchor.web3.TransactionMessage({
@@ -105,7 +107,7 @@ describe("initialize program tests", () => {
         transaction.sign([owner])
         const tx = await provider.connection.sendTransaction(transaction)
         const confirmation = await confirmTransaction(provider.connection, tx)
-        if (confirmation.err) { throw new Error("   ❌ - Transaction not confirmed.") }
+        if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
         console.log("Tx: ", tx)
     })
     it("can stake on heads", async () => {
@@ -114,21 +116,19 @@ describe("initialize program tests", () => {
             [Buffer.from("market"), owner.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
             program.programId
         )
-        const headVault = anchor.web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("head"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
-            program.programId
-        )[0]
         const bet = anchor.web3.PublicKey.findProgramAddressSync(
             [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
+        console.log("THIS IS BET ACCOUNT: ", bet.toBase58())
         const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 10)
-        const tx = await program.methods.stake(betId, amount)
+        const option_id = 1 //lets assume 1 to be heads in coin toss
+        const tx = await program.methods.stake(betId, option_id, amount)
             .accountsPartial({
                 signer: owner.publicKey,
                 market: market,
-                vault: headVault,
-                bet: bet
+                bet: bet,
+
             }).signers([owner]).rpc()
         console.log("Sucessfully staked on heads: ", tx)
     })
@@ -138,22 +138,106 @@ describe("initialize program tests", () => {
             [Buffer.from("market"), owner.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
             program.programId
         )
-        const tailVault = anchor.web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("tail"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
-            program.programId
-        )[0]
         const bet = anchor.web3.PublicKey.findProgramAddressSync(
             [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
         const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 5)
-        const tx = await program.methods.stake(betId, amount)
+        const option_id = 0 // lets assume 0 to be tails
+        const tx = await program.methods.stake(betId, option_id, amount)
             .accountsPartial({
                 signer: owner.publicKey,
                 market: market,
-                vault: tailVault,
                 bet: bet
             }).signers([owner]).rpc()
         console.log("Sucessfully staked on tails: ", tx)
+    })
+    it("can create a new polymarket bet with 5 options", async () => {
+        let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )
+        console.log("market: ", market.toBase58())
+        console.log("owner: ", owner.publicKey.toBase58())
+        let startTime = new anchor.BN(Date.now())
+        let endTime = new anchor.BN(Date.now() + 1000)
+        let totalOptions = 5 // number of options for this market is 5 options
+        const ix1 = await program.methods.createPredictionMarket(seed2, totalOptions, startTime, endTime, marketParams)
+            .accountsPartial({
+                signer: owner.publicKey,
+                market
+            })
+            .instruction()
+        // const headVault = anchor.web3.PublicKey.findProgramAddressSync(
+        //     [Buffer.from("head"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+        //     program.programId
+        // )[0]
+        // const tailVault = anchor.web3.PublicKey.findProgramAddressSync(
+        //     [Buffer.from("tail"), seed.toArrayLike(Buffer, "le", 8), owner.publicKey.toBuffer()],
+        //     program.programId
+        // )[0]
+        // const ix2 = await program.methods.coinTossInitAccounts(seed).accountsPartial({
+        //     payer: owner.publicKey,
+        //     vault1: headVault,
+        //     vault2: tailVault,
+
+        // }).instruction()
+        const instructions: anchor.web3.TransactionInstruction[] = [
+            ix1
+        ]
+        let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
+        const messageV0 = new anchor.web3.TransactionMessage({
+            payerKey: owner.publicKey,
+            recentBlockhash: blockhash,
+            instructions: instructions
+        }).compileToV0Message()
+        const transaction = new anchor.web3.VersionedTransaction(messageV0)
+        transaction.sign([owner])
+        const tx = await provider.connection.sendTransaction(transaction)
+        const confirmation = await confirmTransaction(provider.connection, tx)
+        if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
+        console.log("Tx: ", tx)
+    })
+    it("can stake on option 4", async () => {
+        let betId = new anchor.BN(randomBytes(8))
+        let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )
+        const bet = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )[0]
+        console.log("THIS IS BET ACCOUNT: ", bet.toBase58())
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 10)
+        const option_id = 3 //lets assume 1 to be heads in coin toss
+        const tx = await program.methods.stake(betId, option_id, amount)
+            .accountsPartial({
+                signer: owner.publicKey,
+                market: market,
+                bet: bet,
+
+            }).signers([owner]).rpc()
+        console.log("Sucessfully staked on option 4: ", tx)
+    })
+    it("can stake on option 2", async () => {
+        let betId = new anchor.BN(randomBytes(8))
+        let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )
+        const bet = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )[0]
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 5)
+        const option_id = 1 // lets assume 0 to be tails
+        const tx = await program.methods.stake(betId, option_id, amount)
+            .accountsPartial({
+                signer: owner.publicKey,
+                market: market,
+                bet: bet
+            }).signers([owner]).rpc()
+        console.log("Sucessfully staked on option 2: ", tx)
     })
 })

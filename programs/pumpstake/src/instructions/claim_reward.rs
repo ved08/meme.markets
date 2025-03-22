@@ -21,6 +21,7 @@ struct ClaimReward<'info> {
     #[account(mut)]
     pub bet: Account<'info, Bet>,
     #[account(mut)]
+    /// CHECK: This will come from bet pda in frontend
     pub reciever: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }

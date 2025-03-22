@@ -11,6 +11,7 @@ pub struct Stake<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
+        mut,
         seeds = [b"market", market.owner.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
         bump
     )]
@@ -26,7 +27,7 @@ pub struct Stake<'info> {
     pub system_program: Program<'info, System>,
 }
 impl<'info> Stake<'info> {
-    pub fn place_bet(&mut self, option: u8, amount: u64) -> Result<()> {
+    pub fn place_bet(&mut self, bet_id: u64, option: u8, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
         let timestamp = clock.unix_timestamp;
         require!(
@@ -34,6 +35,7 @@ impl<'info> Stake<'info> {
             PumpstakeErrors::MarketExpired
         );
         self.bet.set_inner(Bet {
+            bet_id,
             market_id: self.market.market_id,
             placed_at: timestamp,
             bettor: self.signer.to_account_info().key(),
