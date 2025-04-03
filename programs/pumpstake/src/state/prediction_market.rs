@@ -27,9 +27,11 @@ pub struct PredictionMarket {
     pub start_time: i64,
     pub end_time: i64,
     pub is_active: bool,
-    pub winner: u8,
+    pub winner: Option<u8>,
     pub total_mc: u64,
     pub data: PredictionMarketParams,
+    pub total_tokens: u64,
+    pub graduate: Option<bool>,
 }
 
 #[account]

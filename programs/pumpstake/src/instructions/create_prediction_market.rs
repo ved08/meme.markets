@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_lang::system_program::{transfer, Transfer};
 
 use crate::error::PumpstakeErrors;
 use crate::state::BettingOption;
@@ -18,6 +19,12 @@ pub struct CreatePredictionMarket<'info> {
         space = 8 + PredictionMarket::INIT_SPACE,
     )]
     pub market: Account<'info, PredictionMarket>,
+    #[account(
+        mut,
+        seeds = [b"vault", market.key().as_ref()],
+        bump
+    )]
+    pub market_vault: SystemAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 impl<'info> CreatePredictionMarket<'info> {
@@ -25,8 +32,7 @@ impl<'info> CreatePredictionMarket<'info> {
         &mut self,
         seed: u64,
         total_options: u8,
-        start_time: i64,
-        end_time: i64,
+        duration: i64,
         params: PredictionMarketParams,
         bumps: &CreatePredictionMarketBumps,
     ) -> Result<()> {
@@ -34,6 +40,19 @@ impl<'info> CreatePredictionMarket<'info> {
             total_options <= MAX_OPTIONS,
             PumpstakeErrors::MaxOptionsExceeded
         );
+        let clock = Clock::get().unwrap();
+        let start_time = clock.unix_timestamp * 1000;
+        let end_time = start_time.checked_add(duration).unwrap();
+
+        let rent = Rent::get()?;
+        let amount = rent.minimum_balance(0);
+        let accounts = Transfer {
+            from: self.signer.to_account_info(),
+            to: self.market_vault.to_account_info(),
+        };
+        let cpi = CpiContext::new(self.system_program.to_account_info(), accounts);
+        transfer(cpi, amount)?;
+
         let mut options = Vec::with_capacity(total_options as usize);
         for i in 0..total_options {
             options.push(BettingOption {
@@ -52,7 +71,9 @@ impl<'info> CreatePredictionMarket<'info> {
             is_active: true,
             data: params,
             total_mc: 0,
-            winner: 0,
+            winner: None,
+            graduate: None,
+            total_tokens: 80_000_000, //total supply is this
         });
         Ok(())
     }

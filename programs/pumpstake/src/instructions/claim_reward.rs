@@ -1,6 +1,5 @@
 use anchor_lang::{
     prelude::*,
-    solana_program::native_token::LAMPORTS_PER_SOL,
     system_program::{transfer, Transfer},
 };
 
@@ -10,14 +9,21 @@ use crate::{
 };
 
 #[derive(Accounts)]
-struct ClaimReward<'info> {
+pub struct ClaimReward<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
+        mut,
         seeds = [b"market", signer.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
+    #[account(
+        mut,
+        seeds = [b"vault", market.key().as_ref()],
+        bump
+    )]
+    pub market_vault: SystemAccount<'info>,
     #[account(mut)]
     pub bet: Account<'info, Bet>,
     #[account(mut)]
@@ -27,13 +33,13 @@ struct ClaimReward<'info> {
 }
 
 impl<'info> ClaimReward<'info> {
-    pub fn claim_reward(&mut self) -> Result<()> {
+    pub fn claim_reward(&mut self, bumps: &ClaimRewardBumps) -> Result<()> {
         require_keys_eq!(
             self.signer.key(),
             self.market.owner.key(),
             PumpstakeErrors::NotAuthorized
         );
-        let timestamp = Clock::get().unwrap().unix_timestamp;
+        let timestamp = Clock::get().unwrap().unix_timestamp * 1000;
         require!(
             self.market.end_time <= timestamp,
             PumpstakeErrors::MarketActive
@@ -47,43 +53,44 @@ impl<'info> ClaimReward<'info> {
             self.reciever.to_account_info().key(),
             PumpstakeErrors::IncorrectReceivor
         );
+        require!(
+            self.market.graduate == Some(false),
+            PumpstakeErrors::SufficientLiquidityToGraduate
+        );
         // If winner
-        if self.bet.option.eq(&self.market.winner) {
+        if self.bet.option.eq(&self.market.winner.unwrap()) {
             // Distribute funds here or calculate for raydium
-            if self.market.total_mc < 100 * LAMPORTS_PER_SOL {
-                // refund process
-                let losers_liquidity = (self.market.total_mc
-                    - self
-                        .market
-                        .market_options
-                        .iter()
-                        .find(|opt| opt.option_id == self.market.winner)
-                        .unwrap()
-                        .liquidity);
-                let winner_liquidity = self.market.total_mc - losers_liquidity;
-                let winner_share_amount =
-                    (self.bet.amount / winner_liquidity) * (losers_liquidity / 2);
+            // if self.market.total_mc < 100 * LAMPORTS_PER_SOL {
+            // refund process
+            let losers_liquidity = self.market.total_mc
+                - self
+                    .market
+                    .market_options
+                    .iter()
+                    .find(|opt| opt.option_id == self.market.winner.unwrap())
+                    .unwrap()
+                    .liquidity;
+            let winner_liquidity = self.market.total_mc - losers_liquidity;
+            let winner_share_amount = (self.bet.amount / winner_liquidity) * (losers_liquidity / 2);
 
-                let market_id_bytes = self.market.market_id.to_le_bytes();
-                let signer_seeds: &[&[&[u8]]] = &[&[
-                    b"market",
-                    self.signer.to_account_info().key.as_ref(),
-                    market_id_bytes.as_ref(),
-                    &[self.market.bump],
-                ]];
-                let accounts = Transfer {
-                    from: self.market.to_account_info(),
-                    to: self.reciever.to_account_info(),
-                };
-                let ctx = CpiContext::new_with_signer(
-                    self.system_program.to_account_info(),
-                    accounts,
-                    signer_seeds,
-                );
-                transfer(ctx, winner_share_amount)?;
-            } else {
-                // create amm will come in resolve_market.rs
-            }
+            let signer_seeds: &[&[&[u8]]] = &[&[
+                b"vault",
+                self.market.to_account_info().key.as_ref(),
+                &[bumps.market_vault],
+            ]];
+            let accounts = Transfer {
+                from: self.market_vault.to_account_info(),
+                to: self.reciever.to_account_info(),
+            };
+            let ctx = CpiContext::new_with_signer(
+                self.system_program.to_account_info(),
+                accounts,
+                signer_seeds,
+            );
+            transfer(ctx, winner_share_amount)?;
+            // } else {
+            //     // create amm will come in resolve_market.rs
+            // }
         } else {
             // Refund to the loser
             let losers_liquidity = (self.market.total_mc
@@ -91,20 +98,18 @@ impl<'info> ClaimReward<'info> {
                     .market
                     .market_options
                     .iter()
-                    .find(|opt| opt.option_id == self.market.winner)
+                    .find(|opt| opt.option_id == self.market.winner.unwrap())
                     .unwrap()
                     .liquidity);
             let loser_share_amount = (self.bet.amount / losers_liquidity) * (losers_liquidity / 2);
 
-            let market_id_bytes = self.market.market_id.to_le_bytes();
             let signer_seeds: &[&[&[u8]]] = &[&[
-                b"market",
-                self.signer.to_account_info().key.as_ref(),
-                market_id_bytes.as_ref(),
-                &[self.market.bump],
+                b"vault",
+                self.market.to_account_info().key.as_ref(),
+                &[bumps.market_vault],
             ]];
             let accounts = Transfer {
-                from: self.market.to_account_info(),
+                from: self.market_vault.to_account_info(),
                 to: self.reciever.to_account_info(),
             };
             let ctx = CpiContext::new_with_signer(

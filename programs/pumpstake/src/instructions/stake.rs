@@ -17,6 +17,12 @@ pub struct Stake<'info> {
     )]
     pub market: Account<'info, PredictionMarket>,
     #[account(
+        mut,
+        seeds = [b"vault", market.key().as_ref()],
+        bump
+    )]
+    pub market_vault: SystemAccount<'info>,
+    #[account(
         init,
         payer = signer,
         seeds = [b"bet", market.key().as_ref(), signer.key().as_ref(), bet_id.to_le_bytes().as_ref()],
@@ -48,15 +54,15 @@ impl<'info> Stake<'info> {
             .iter_mut()
             .find(|opt| opt.option_id == option)
             .unwrap();
-        option.liquidity.checked_add(amount).unwrap();
+        option.liquidity += amount;
 
         let accounts = Transfer {
             from: self.signer.to_account_info(),
-            to: self.market.to_account_info(),
+            to: self.market_vault.to_account_info(),
         };
         let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
         transfer(ctx, amount)?;
-        self.market.total_mc.checked_add(amount).unwrap();
+        self.market.total_mc += amount;
         Ok(())
     }
 }

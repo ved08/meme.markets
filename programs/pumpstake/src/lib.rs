@@ -12,21 +12,21 @@ declare_id!("5eYrZR3FJYiuoGG7YsjhZP97EPofN65zM4PeLtUW8ZL3");
 #[program]
 pub mod pumpstake {
 
+    use crate::instruction::Claim;
+
     use super::*;
 
     pub fn create_prediction_market(
         ctx: Context<CreatePredictionMarket>,
         seed: u64,
         total_options: u8,
-        start_time: i64,
-        end_time: i64,
+        duration: i64,
         details: PredictionMarketParams,
     ) -> Result<()> {
         ctx.accounts.create_prediction_market(
             seed,
             total_options,
-            start_time,
-            end_time,
+            duration,
             details,
             &ctx.bumps,
         )?;
@@ -43,11 +43,17 @@ pub mod pumpstake {
     pub fn stake(ctx: Context<Stake>, bet_id: u64, option: u8, amount: u64) -> Result<()> {
         ctx.accounts.place_bet(bet_id, option, amount)
     }
-    pub fn sell(ctx: Context<CreatePredictionMarket>) -> Result<()> {
-        todo!()
+    pub fn resolve_market(ctx: Context<ResolveMarket>, option: u8) -> Result<()> {
+        ctx.accounts.resolve_winner(option)?;
+        Ok(())
     }
-    pub fn distribute_fund(ctx: Context<CreatePredictionMarket>) -> Result<()> {
-        todo!()
+    pub fn claim(ctx: Context<ClaimReward>) -> Result<()> {
+        ctx.accounts.claim_reward(&ctx.bumps)?;
+        Ok(())
+    }
+    pub fn claim2(ctx: Context<ClaimTokenReward>) -> Result<()> {
+        ctx.accounts.claim_tokens()?;
+        Ok(())
     }
     pub fn proxy_initialize(
         ctx: Context<ProxyInitialize>,

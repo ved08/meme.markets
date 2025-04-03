@@ -12,4 +12,8 @@ pub enum PumpstakeErrors {
     MaxOptionsExceeded,
     #[msg("Bettor pubkey and reciever dont match")]
     IncorrectReceivor,
+    #[msg("Not enough liquidity to graduate")]
+    InsufficientLiquidityToGraduate,
+    #[msg("Enough liquidity to graduate. Cannot refund")]
+    SufficientLiquidityToGraduate,
 }

@@ -1,8 +1,6 @@
 pub mod create_prediction_market;
 pub mod initialize_pool;
 pub use create_prediction_market::*;
-pub mod distribute_funds;
-pub use distribute_funds::*;
 pub mod stake;
 pub use stake::*;
 pub mod resolve_market;
@@ -16,3 +14,5 @@ pub mod claim_reward;
 pub use claim_reward::*;
 pub mod create_bet_amm;
 pub use create_bet_amm::*;
+pub mod claim_token_reward;
+pub use claim_token_reward::*;
