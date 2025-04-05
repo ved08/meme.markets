@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use super::MAX_OPTIONS;
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]
 pub struct PredictionMarketParams {
+    market_type: u8,
     ticker: String,
     name: String,
     image: String,
@@ -47,11 +48,13 @@ pub struct Bet {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BettingOption {
-    pub option_id: u8,       // Unique ID for this option (e.g., 0, 1, 2...)
-    pub description: String, // Description (e.g., "Team A wins")
-    pub liquidity: u64,      // Amount of tokens staked/pooled for this option
+    pub option_id: u8,
+    pub name: String,
+    pub image: String,
+    pub description: String,
+    pub liquidity: u64,
 }
 
 impl Space for BettingOption {
-    const INIT_SPACE: usize = 1 + 154 + 8;
+    const INIT_SPACE: usize = 1 + 10 + 100 + 154 + 8;
 }

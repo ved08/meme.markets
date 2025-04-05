@@ -22,12 +22,14 @@ pub mod pumpstake {
         total_options: u8,
         duration: i64,
         details: PredictionMarketParams,
+        option_details: Vec<BettingOption>,
     ) -> Result<()> {
         ctx.accounts.create_prediction_market(
             seed,
             total_options,
             duration,
             details,
+            option_details,
             &ctx.bumps,
         )?;
         Ok(())

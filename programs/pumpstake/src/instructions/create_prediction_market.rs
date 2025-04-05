@@ -34,6 +34,7 @@ impl<'info> CreatePredictionMarket<'info> {
         total_options: u8,
         duration: i64,
         params: PredictionMarketParams,
+        options: Vec<BettingOption>,
         bumps: &CreatePredictionMarketBumps,
     ) -> Result<()> {
         require!(
@@ -53,14 +54,16 @@ impl<'info> CreatePredictionMarket<'info> {
         let cpi = CpiContext::new(self.system_program.to_account_info(), accounts);
         transfer(cpi, amount)?;
 
-        let mut options = Vec::with_capacity(total_options as usize);
-        for i in 0..total_options {
-            options.push(BettingOption {
-                option_id: i,
-                description: "this a option".to_owned(),
-                liquidity: 0,
-            });
-        }
+        // let mut options = Vec::with_capacity(total_options as usize);
+        // for i in 0..total_options {
+        //     options.push(BettingOption {
+        //         option_id: i,
+        //         name: "",
+        //         image: "",
+        //         description: "this a option".to_owned(),
+        //         liquidity: 0,
+        //     });
+        // }
         self.market.set_inner(PredictionMarket {
             market_id: seed,
             bump: bumps.market,

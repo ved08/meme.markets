@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program, BN } from "@coral-xyz/anchor";
 import { Pumpstake } from "../target/types/pumpstake";
 import { randomBytes } from "crypto"
-import { am } from "@raydium-io/raydium-sdk-v2/lib/api-373aef5f";
+import { str, struct, u64, u8 } from "@coral-xyz/borsh"
 describe("initialize program tests", () => {
     const provider = anchor.AnchorProvider.env()
     anchor.setProvider(provider);
@@ -21,6 +21,7 @@ describe("initialize program tests", () => {
     }
 
     let marketParams = {
+        marketType: 0,
         ticker: "Test",
         name: "Hello",
         image: "test",
@@ -29,6 +30,35 @@ describe("initialize program tests", () => {
         website: "x.com",
         telegram: "telegram.org",
     }
+    class BettingOption {
+        option_id: number;
+        name: string;
+        image: string;
+        description: string;
+        liquidity: anchor.BN;
+
+        constructor(fields: {
+            option_id: number;
+            name: string;
+            image: string;
+            description: string;
+            liquidity: anchor.BN;
+        }) {
+            Object.assign(this, fields);
+        }
+    }
+    const BettingOptionSchema = new Map([
+        [
+            BettingOption,
+            struct([
+                u8("option_id"),
+                str("name"),
+                str("image"),
+                str("description"),
+                u64("liquidity"),
+            ]),
+        ],
+    ]);
     let seed = new anchor.BN(randomBytes(8)) // this is for coin toss bet
     let seed2 = new anchor.BN(randomBytes(8)) // this is for 5 options bet(polymarket)
     async function confirmTransaction(
@@ -90,7 +120,23 @@ describe("initialize program tests", () => {
         console.log("owner: ", owner.publicKey.toBase58())
         let duration = new anchor.BN(1000)
         let totalOptions = 2 // number of options for coin toss is 2
-        const ix1 = await program.methods.createPredictionMarket(seed, totalOptions, duration, marketParams)
+        let optionDetails = [
+            {
+                optionId: 0,
+                name: "Option 1",
+                image: "xyz",
+                description: "xyz",
+                liquidity: new anchor.BN(0),
+            },
+            {
+                optionId: 1,
+                name: "Option 2",
+                image: "xyz",
+                description: "xyz",
+                liquidity: new anchor.BN(0),
+            }
+        ]
+        const ix1 = await program.methods.createPredictionMarket(seed, totalOptions, duration, marketParams, optionDetails)
             .accountsPartial({
                 signer: owner.publicKey,
                 market
