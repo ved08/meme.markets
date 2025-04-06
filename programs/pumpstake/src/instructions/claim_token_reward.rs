@@ -93,10 +93,12 @@ impl<'info> ClaimTokenReward<'info> {
             to: self.receiver_ata.to_account_info(),
             authority: self.market.to_account_info(),
         };
+        let binding = self.market.market_id.to_le_bytes();
         let seeds = &[
-            "mint".as_bytes(),
-            self.market.to_account_info().key.as_ref(),
-            &[bumps.mint],
+            b"market",
+            self.signer.to_account_info().key.as_ref(),
+            binding.as_ref(),
+            &[bumps.market],
         ];
         let signer = [&seeds[..]];
         let ctx = CpiContext::new_with_signer(

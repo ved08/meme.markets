@@ -47,6 +47,14 @@ pub struct CreateCoin<'info> {
 }
 impl<'info> CreateCoin<'info> {
     pub fn create_mint(&mut self, bumps: &CreateCoinBumps) -> Result<()> {
+        require!(
+            self.market.graduate.unwrap(),
+            PumpstakeErrors::TokenCreationNotAllowed
+        );
+        require!(
+            self.market.is_active == false,
+            PumpstakeErrors::MarketActive
+        );
         let seeds = &[
             "mint".as_bytes(),
             self.market.to_account_info().key.as_ref(),
@@ -90,6 +98,10 @@ impl<'info> CreateCoin<'info> {
     }
 
     pub fn mint_to_reserve(&self, bumps: &CreateCoinBumps) -> Result<()> {
+        require!(
+            self.market.graduate.unwrap(),
+            PumpstakeErrors::TokenCreationNotAllowed
+        );
         let seeds = &[
             "mint".as_bytes(),
             self.market.to_account_info().key.as_ref(),

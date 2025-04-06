@@ -16,4 +16,6 @@ pub enum PumpstakeErrors {
     InsufficientLiquidityToGraduate,
     #[msg("Enough liquidity to graduate. Cannot refund")]
     SufficientLiquidityToGraduate,
+    #[msg("cannot create token. market cannot graduate")]
+    TokenCreationNotAllowed,
 }

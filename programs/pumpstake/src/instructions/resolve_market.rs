@@ -14,7 +14,6 @@ pub struct ResolveMarket<'info> {
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
-    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 impl<'info> ResolveMarket<'info> {

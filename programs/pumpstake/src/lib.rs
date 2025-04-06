@@ -4,15 +4,11 @@ use instructions::*;
 mod state;
 use state::*;
 mod error;
-use error::*;
 mod utils;
-use utils::*;
 declare_id!("5eYrZR3FJYiuoGG7YsjhZP97EPofN65zM4PeLtUW8ZL3");
 
 #[program]
 pub mod pumpstake {
-
-    use crate::instruction::Claim;
 
     use super::*;
 
@@ -34,14 +30,6 @@ pub mod pumpstake {
         )?;
         Ok(())
     }
-    // pub fn roll_die_init_accounts(ctx: Context<RollDieInit>) -> Result<()> {
-    //     ctx.accounts.roll_die_accounts_init()?;
-    //     Ok(())
-    // }
-    // pub fn coin_toss_init_accounts(ctx: Context<CoinTossInit>, market_id: u64) -> Result<()> {
-    //     ctx.accounts.coin_toss_accounts_init()?;
-    //     Ok(())
-    // }
     pub fn stake(ctx: Context<Stake>, bet_id: u64, option: u8, amount: u64) -> Result<()> {
         ctx.accounts.place_bet(bet_id, option, amount)
     }
