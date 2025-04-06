@@ -1,5 +1,6 @@
 // INTEGRATE amm creation here only
 use anchor_lang::{prelude::*, solana_program::native_token::LAMPORTS_PER_SOL};
+use anchor_spl::token_interface::{Mint, TokenInterface};
 
 use crate::{error::PumpstakeErrors, state::PredictionMarket};
 
@@ -13,6 +14,8 @@ pub struct ResolveMarket<'info> {
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
 }
 impl<'info> ResolveMarket<'info> {
     pub fn resolve_winner(&mut self, option: u8) -> Result<()> {

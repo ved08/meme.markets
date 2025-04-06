@@ -16,3 +16,5 @@ pub mod create_bet_amm;
 pub use create_bet_amm::*;
 pub mod claim_token_reward;
 pub use claim_token_reward::*;
+pub mod create_coin;
+pub use create_coin::*;

@@ -49,12 +49,17 @@ pub mod pumpstake {
         ctx.accounts.resolve_winner(option)?;
         Ok(())
     }
+    pub fn create_coin(ctx: Context<CreateCoin>) -> Result<()> {
+        ctx.accounts.create_mint(&ctx.bumps)?;
+        ctx.accounts.mint_to_reserve(&ctx.bumps)?;
+        Ok(())
+    }
     pub fn claim(ctx: Context<ClaimReward>) -> Result<()> {
         ctx.accounts.claim_reward(&ctx.bumps)?;
         Ok(())
     }
     pub fn claim2(ctx: Context<ClaimTokenReward>) -> Result<()> {
-        ctx.accounts.claim_tokens()?;
+        ctx.accounts.claim_tokens(&ctx.bumps)?;
         Ok(())
     }
     pub fn proxy_initialize(
