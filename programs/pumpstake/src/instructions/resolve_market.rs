@@ -10,7 +10,7 @@ pub struct ResolveMarket<'info> {
     pub signer: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"market", signer.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
+        seeds = [b"market", market.owner.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
@@ -18,11 +18,11 @@ pub struct ResolveMarket<'info> {
 }
 impl<'info> ResolveMarket<'info> {
     pub fn resolve_winner(&mut self, option: u8) -> Result<()> {
-        require_keys_eq!(
-            self.market.owner,
-            self.signer.to_account_info().key(),
-            PumpstakeErrors::NotAuthorized
-        );
+        // require_keys_eq!(
+        //     self.market.owner,
+        //     self.signer.to_account_info().key(),
+        //     PumpstakeErrors::NotAuthorized
+        // );
         let clock = Clock::get().unwrap();
         let timestamp = clock.unix_timestamp * 1000;
         require!(

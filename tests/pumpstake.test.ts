@@ -215,6 +215,8 @@ describe("initialize program tests", () => {
                 bet: bet
             }).signers([owner]).rpc()
         console.log("Sucessfully staked on tails: ", tx)
+        const data = await program.account.predictionMarket.fetch(market)
+        console.log(data.marketOptions[0].liquidity.toNumber())
     })
     // it("can create a new polymarket bet with 5 options", async () => {
     //     let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
