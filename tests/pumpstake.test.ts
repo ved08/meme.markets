@@ -4,6 +4,8 @@ import { Pumpstake } from "../target/types/pumpstake";
 import { randomBytes } from "crypto"
 import { str, struct, u64, u8 } from "@coral-xyz/borsh"
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { configAddress } from "./config";
+import { initialize } from "./utils";
 describe("initialize program tests", () => {
     const provider = anchor.AnchorProvider.env()
     anchor.setProvider(provider);
@@ -377,7 +379,8 @@ describe("initialize program tests", () => {
                 .accountsPartial({
                     bet,
                     market,
-                    reciever: owner.publicKey
+                    reciever: owner.publicKey,
+
                 }).signers([owner])
                 .rpc()
             console.log("successfully refunded: ", tx)
@@ -395,6 +398,40 @@ describe("initialize program tests", () => {
             const marketData = await program.account.predictionMarket.fetch(market)
             console.log("total winner liq: ", JSON.stringify(marketData))
         }
+    })
+    it("can transfer tokens to raydium and create raydium pool", async () => {
+        let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("market"), owner.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        )
+        const mint = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("mint"), market.toBuffer()],
+            program.programId
+        )[0]
+        const wsolMint = new anchor.web3.PublicKey("So11111111111111111111111111111111111111112")
+        const tx1 = await program.methods.transferTokensToCreator()
+            .accountsPartial({
+                creator: owner.publicKey,
+                market,
+                wsolMint,
+                mint,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
+            }).rpc()
+        console.log("TRransferred tokens to creator: ", tx1)
+        const initAmount0 = new BN(10000000000);
+        const initAmount1 = new BN(20000000000);
+        const { poolAddress, cpSwapPoolState, tx } = await initialize(
+            program,
+            owner.publicKey,
+            configAddress,
+            wsolMint,
+            TOKEN_PROGRAM_ID,
+            mint,
+            TOKEN_PROGRAM_ID,
+            { initAmount0, initAmount1 }
+        );
+        console.log("created raydium pool, ", tx)
     })
     // it("can allocate tokens to another user", async () => {
     //     let betId = new anchor.BN(1111)

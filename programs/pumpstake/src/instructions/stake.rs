@@ -47,6 +47,7 @@ impl<'info> Stake<'info> {
             bettor: self.signer.to_account_info().key(),
             amount,
             option,
+            market: self.market.to_account_info().key(),
         });
         let option = self
             .market

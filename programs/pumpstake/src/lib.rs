@@ -5,7 +5,7 @@ mod state;
 use state::*;
 mod error;
 mod utils;
-declare_id!("ADfoHBUPKejJTsr56d3UfZVseBkdp58a3fUXE41r25Gs");
+declare_id!("HUq6sXsfmNeGj3mfcaeSohyhBoVB29u5QMsUWs4bEgpj");
 
 #[program]
 pub mod pumpstake {
@@ -50,10 +50,10 @@ pub mod pumpstake {
         ctx.accounts.claim_tokens(&ctx.bumps)?;
         Ok(())
     }
-    // pub fn transfer_tokens_to_creator(ctx: Context<TransferTokensToCreator>) -> Result<()> {
-    //     ctx.accounts.transfer_tokens_to_creator_ata(&ctx.bumps)?;
-    //     Ok(())
-    // }
+    pub fn transfer_tokens_to_creator(ctx: Context<TransferTokensToCreator>) -> Result<()> {
+        ctx.accounts.transfer_tokens_to_creator_ata(&ctx.bumps)?;
+        Ok(())
+    }
     pub fn proxy_initialize(
         ctx: Context<ProxyInitialize>,
         init_amount_0: u64,

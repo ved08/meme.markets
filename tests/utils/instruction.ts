@@ -164,17 +164,14 @@ export async function setupInitializeTest(
 
 export async function initialize(
     program: Program<Pumpstake>,
-    creator: Signer,
+    creator: PublicKey,
     configAddress: PublicKey,
     token0: PublicKey,
     token0Program: PublicKey,
     token1: PublicKey,
     token1Program: PublicKey,
+    initAmount: { initAmount0: BN; initAmount1: BN },
     confirmOptions?: ConfirmOptions,
-    initAmount: { initAmount0: BN; initAmount1: BN } = {
-        initAmount0: new BN(10000000000),
-        initAmount1: new BN(20000000000),
-    },
     createPoolFee = createPoolFeeReceive
 ) {
     const [auth] = await getAuthAddress(cpSwapProgram);
@@ -200,7 +197,7 @@ export async function initialize(
     );
     const [creatorLpTokenAddress] = await PublicKey.findProgramAddress(
         [
-            creator.publicKey.toBuffer(),
+            creator.toBuffer(),
             TOKEN_PROGRAM_ID.toBuffer(),
             lpMintAddress.toBuffer(),
         ],
@@ -214,21 +211,22 @@ export async function initialize(
 
     const creatorToken0 = getAssociatedTokenAddressSync(
         token0,
-        creator.publicKey,
+        creator,
         false,
         token0Program
     );
     const creatorToken1 = getAssociatedTokenAddressSync(
         token1,
-        creator.publicKey,
+        creator,
         false,
         token1Program
     );
+
     const tx = await program.methods
         .proxyInitialize(initAmount.initAmount0, initAmount.initAmount1, new BN(0))
         .accountsPartial({
             cpSwapProgram: cpSwapProgram,
-            creator: creator.publicKey,
+            creator: creator,
             ammConfig: configAddress,
             authority: auth,
             poolState: poolAddress,

@@ -14,7 +14,7 @@ pub struct ClaimReward<'info> {
     pub signer: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"market", signer.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
+        seeds = [b"market", market.owner.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
@@ -34,11 +34,11 @@ pub struct ClaimReward<'info> {
 
 impl<'info> ClaimReward<'info> {
     pub fn claim_reward(&mut self, bumps: &ClaimRewardBumps) -> Result<()> {
-        require_keys_eq!(
-            self.signer.key(),
-            self.market.owner.key(),
-            PumpstakeErrors::NotAuthorized
-        );
+        // require_keys_eq!(
+        //     self.signer.key(),
+        //     self.market.owner.key(),
+        //     PumpstakeErrors::NotAuthorized
+        // );
         let timestamp = Clock::get().unwrap().unix_timestamp * 1000;
         require!(
             self.market.end_time <= timestamp,

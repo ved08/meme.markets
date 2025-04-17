@@ -26,14 +26,14 @@ describe("initialize test", () => {
         const initAmount1 = new BN(20000000000);
         const { poolAddress, cpSwapPoolState, tx } = await initialize(
             program,
-            owner,
+            owner.publicKey,
             configAddress,
             token0,
             token0Program,
             token1,
             token1Program,
+            { initAmount0, initAmount1 },
             confirmOptions,
-            { initAmount0, initAmount1 }
         );
 
         console.log("pool address: ", poolAddress.toString(), " tx:", tx);

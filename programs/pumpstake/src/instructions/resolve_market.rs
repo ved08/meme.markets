@@ -31,7 +31,8 @@ impl<'info> ResolveMarket<'info> {
         );
         msg!("self.market = {}", self.market.end_time);
         msg!("total market cap = {}", self.market.total_mc);
-        if self.market.total_mc < 100 * LAMPORTS_PER_SOL {
+        // CHANGE THIS TO 100
+        if self.market.total_mc < 10 * LAMPORTS_PER_SOL {
             self.market.graduate = Some(false);
         } else {
             self.market.graduate = Some(true); // create amm and graduate to raydium

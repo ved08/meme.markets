@@ -9,7 +9,7 @@ pub struct ClaimTokenReward<'info> {
     pub signer: Signer<'info>,
     #[account(
         mut, 
-        seeds = [b"market", signer.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
+        seeds = [b"market", market.owner.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
         bump
     )]
     pub market: Account<'info, PredictionMarket>,

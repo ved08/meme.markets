@@ -16,7 +16,7 @@ pub struct CreateCoin<'info> {
     pub signer: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"market", signer.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
+        seeds = [b"market", market.owner.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
@@ -28,7 +28,7 @@ pub struct CreateCoin<'info> {
         mint::decimals = 6,
         mint::authority = mint
     )]
-    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    pub mint: InterfaceAccount<'info, Mint>,
     /// CHECK: New Metaplex Account being created
     #[account(mut)]
     pub metadata: UncheckedAccount<'info>,
@@ -38,7 +38,7 @@ pub struct CreateCoin<'info> {
         associated_token::mint = mint,
         associated_token::authority = market
       )]
-    pub token_reserve: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub token_reserve: InterfaceAccount<'info, TokenAccount>,
     pub token_program: Interface<'info, TokenInterface>,
     pub token_metadata_program: Program<'info, Metaplex>,
     pub associated_token_program: Program<'info, AssociatedToken>,

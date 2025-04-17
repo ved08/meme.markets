@@ -18,4 +18,6 @@ pub enum PumpstakeErrors {
     SufficientLiquidityToGraduate,
     #[msg("cannot create token. market cannot graduate")]
     TokenCreationNotAllowed,
+    #[msg("No tokens present in the vault")]
+    NoFundsInVault,
 }

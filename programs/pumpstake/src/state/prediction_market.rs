@@ -44,6 +44,7 @@ pub struct Bet {
     pub bettor: Pubkey,
     pub amount: u64,
     pub option: u8,
+    pub market: Pubkey,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
