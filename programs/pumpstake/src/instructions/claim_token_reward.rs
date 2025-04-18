@@ -7,6 +7,8 @@ use crate::{state::{Bet, PredictionMarket}, utils::calculate_tokens_to_send, err
 pub struct ClaimTokenReward<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
+    /// CHECK: This will be market creator for signing PDA
+    pub market_creator: UncheckedAccount<'info>,
     #[account(
         mut, 
         seeds = [b"market", market.owner.key().as_ref(), market.market_id.to_le_bytes().as_ref()],
@@ -79,6 +81,7 @@ impl<'info> ClaimTokenReward<'info> {
                 signer_seeds,
             );
             transfer(ctx, winner_share_amount)?;
+            self.market.total_mc -= winner_share_amount;
         }
         let tokens_to_send = calculate_tokens_to_send(
             self.bet.amount, 
@@ -96,7 +99,7 @@ impl<'info> ClaimTokenReward<'info> {
         let binding = self.market.market_id.to_le_bytes();
         let seeds = &[
             b"market",
-            self.signer.to_account_info().key.as_ref(),
+            self.market_creator.to_account_info().key.as_ref(),
             binding.as_ref(),
             &[bumps.market],
         ];
@@ -108,6 +111,10 @@ impl<'info> ClaimTokenReward<'info> {
         );
         transfer_checked(ctx, tokens_to_send, self.mint.decimals)?;
 
+        let option = self.market.market_options.iter_mut()
+        .find(|opt| opt.option_id == self.bet.option).unwrap();
+        
+        option.liquidity -= self.bet.amount;
         self.market.total_tokens -= tokens_to_send;
         
         msg!("Tokens allocated: {}", tokens_to_send);

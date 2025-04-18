@@ -9,7 +9,7 @@ pub fn calculate_tokens_to_send(
         return 0;
     }
 
-    let minimum: u64 = 24_00_000; // 3% of 80 Million
+    let minimum: u64 = 24_00_000 * u64::pow(10, 6); // 3% of 80 Million
     let tokens_allocated = if is_winner {
         ((token_reserve as u128) * (staked_amount as u128)) / (total_liquidity as u128)
     } else {
