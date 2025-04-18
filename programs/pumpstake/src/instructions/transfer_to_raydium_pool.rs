@@ -12,9 +12,11 @@ use crate::{error::PumpstakeErrors, state::PredictionMarket};
 
 #[derive(Accounts)]
 pub struct TransferTokensToCreator<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
     ///CHECK: This should be the market creator account
     #[account(mut)]
-    pub creator: UncheckedAccount<'info>,
+    pub market_creator: UncheckedAccount<'info>,
     #[account(
         mut,
         seeds = [b"market", market.owner.as_ref(), market.market_id.to_le_bytes().as_ref()],
@@ -44,17 +46,17 @@ pub struct TransferTokensToCreator<'info> {
     pub market_vault: SystemAccount<'info>,
     #[account(
         init_if_needed,
-        payer = creator,
+        payer = signer,
         associated_token::mint = mint,
-        associated_token::authority = creator,
+        associated_token::authority = signer,
         associated_token::token_program = token_program,
     )]
     pub creator_token_account: InterfaceAccount<'info, TokenAccount>,
     #[account(
         init_if_needed,
-        payer = creator,
+        payer = signer,
         associated_token::mint = wsol_mint,
-        associated_token::authority = creator,
+        associated_token::authority = signer,
     )]
     pub creator_wsol_account: InterfaceAccount<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
@@ -101,7 +103,7 @@ impl<'info> TransferTokensToCreator<'info> {
         let binding = self.market.market_id.to_le_bytes();
         let seeds = &[
             b"market",
-            self.creator.to_account_info().key.as_ref(),
+            self.market_creator.to_account_info().key.as_ref(),
             binding.as_ref(),
             &[bumps.market],
         ];

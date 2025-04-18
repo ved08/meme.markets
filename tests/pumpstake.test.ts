@@ -217,102 +217,6 @@ describe("initialize program tests", () => {
         const data = await program.account.predictionMarket.fetch(market)
         console.log(data.marketOptions[0].liquidity.toNumber())
     })
-    // it("can create a new polymarket bet with 5 options", async () => {
-    //     let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )
-    //     console.log("market: ", market.toBase58())
-    //     console.log("owner: ", owner.publicKey.toBase58())
-    //     let duration = new anchor.BN(1000)
-    //     let totalOptions = 5 // number of options for this market is 5 options
-    //     const ix1 = await program.methods.createPredictionMarket(seed2, totalOptions, duration, marketParams)
-    //         .accountsPartial({
-    //             signer: owner.publicKey,
-    //             market
-    //         })
-    //         .instruction()
-    //     const instructions: anchor.web3.TransactionInstruction[] = [
-    //         ix1
-    //     ]
-    //     let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
-    //     const messageV0 = new anchor.web3.TransactionMessage({
-    //         payerKey: owner.publicKey,
-    //         recentBlockhash: blockhash,
-    //         instructions: instructions
-    //     }).compileToV0Message()
-    //     const transaction = new anchor.web3.VersionedTransaction(messageV0)
-    //     transaction.sign([owner])
-    //     const tx = await provider.connection.sendTransaction(transaction)
-    //     const confirmation = await confirmTransaction(provider.connection, tx)
-    //     if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
-    //     console.log("Tx: ", tx)
-    // })
-    // it("can stake on option 4", async () => {
-    //     let betId = new anchor.BN(5678)
-    //     let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )
-    //     const bet = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )[0]
-    //     console.log("THIS IS BET ACCOUNT: ", bet.toBase58())
-    //     const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 10)
-    //     const option_id = 3 //lets assume 1 to be heads in coin toss
-    //     const tx = await program.methods.stake(betId, option_id, amount)
-    //         .accountsPartial({
-    //             signer: owner.publicKey,
-    //             market: market,
-    //             bet: bet,
-
-    //         }).signers([owner]).rpc()
-    //     console.log("Sucessfully staked on option 4: ", tx)
-    // })
-    // it("can stake on option 2", async () => {
-    //     let betId = new anchor.BN(1234)
-    //     let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )
-    //     const bet = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )[0]
-    //     const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 5)
-    //     const option_id = 1
-    //     const tx = await program.methods.stake(betId, option_id, amount)
-    //         .accountsPartial({
-    //             signer: owner.publicKey,
-    //             market: market,
-    //             bet: bet
-    //         }).signers([owner]).rpc()
-    //     console.log("Sucessfully staked on option 2: ", tx)
-
-    // })
-    // it("another stake another on option 2", async () => {
-    //     let betId = new anchor.BN(1111)
-    //     let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )
-    //     const bet = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("bet"), market.toBuffer(), anotherUser.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )[0]
-    //     const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 5)
-    //     const option_id = 1
-    //     const tx = await program.methods.stake(betId, option_id, amount)
-    //         .accountsPartial({
-    //             signer: anotherUser.publicKey,
-    //             market: market,
-    //             bet: bet
-    //         }).signers([anotherUser]).rpc()
-    //     console.log("Sucessfully staked on option 2: ", tx)
-    //     const data = await program.account.predictionMarket.fetch(market)
-    //     console.log("Staked on option heres the data: ", data)
-    // })
     it("can resolve the coin toss market and mark a winner", async () => {
         await new Promise(resolve => setTimeout(resolve, 1050));
         console.log("Timeout completed. Now resolving market...");
@@ -452,13 +356,16 @@ describe("initialize program tests", () => {
         const wsolMint = new anchor.web3.PublicKey("So11111111111111111111111111111111111111112")
         const tx1 = await program.methods.transferTokensToCreator()
             .accountsPartial({
-                creator: owner.publicKey,
+                signer: owner.publicKey,
+                marketCreator: marketCreator.publicKey,
                 market,
                 wsolMint,
                 mint,
                 tokenProgram: TOKEN_PROGRAM_ID,
                 associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
-            }).rpc()
+            })
+            .signers([owner])
+            .rpc()
         console.log("TRransferred tokens to creator: ", tx1)
         const initAmount0 = new BN(10000000000);
         const initAmount1 = new BN(20000000000);
