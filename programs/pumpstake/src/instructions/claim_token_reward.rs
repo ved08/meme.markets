@@ -52,6 +52,7 @@ pub struct ClaimTokenReward<'info> {
 impl<'info> ClaimTokenReward<'info> {
     pub fn claim_tokens(&mut self, bumps: &ClaimTokenRewardBumps) -> Result<()> {
         require!(self.market.winner.is_some(), PumpstakeErrors::MarketActive);
+        require!(!self.bet.claimed, PumpstakeErrors::RewardAlreadyClaimed);
 
         let is_winner = self.bet.option == self.market.winner.unwrap();
         if is_winner {
@@ -118,6 +119,7 @@ impl<'info> ClaimTokenReward<'info> {
         self.market.total_tokens -= tokens_to_send;
         
         msg!("Tokens allocated: {}", tokens_to_send);
+        self.bet.claimed = true;
         Ok(())
     }
 }

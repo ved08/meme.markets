@@ -20,4 +20,6 @@ pub enum PumpstakeErrors {
     TokenCreationNotAllowed,
     #[msg("No tokens present in the vault")]
     NoFundsInVault,
+    #[msg("Bet reward already claimed")]
+    RewardAlreadyClaimed,
 }

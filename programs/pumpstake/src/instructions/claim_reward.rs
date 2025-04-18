@@ -39,6 +39,7 @@ impl<'info> ClaimReward<'info> {
         //     self.market.owner.key(),
         //     PumpstakeErrors::NotAuthorized
         // );
+        require!(!self.bet.claimed, PumpstakeErrors::RewardAlreadyClaimed);
         let timestamp = Clock::get().unwrap().unix_timestamp * 1000;
         require!(
             self.market.end_time <= timestamp,
@@ -119,7 +120,7 @@ impl<'info> ClaimReward<'info> {
             );
             transfer(ctx, loser_share_amount)?;
         }
-
+        self.bet.claimed = true;
         Ok(())
     }
 }

@@ -3,14 +3,14 @@ use anchor_lang::prelude::*;
 use super::MAX_OPTIONS;
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]
 pub struct PredictionMarketParams {
-    market_type: u8,
-    ticker: String,
-    name: String,
-    image: String,
-    description: String,
-    twitter: String,
-    website: String,
-    telegram: String,
+    pub market_type: u8,
+    pub ticker: String,
+    pub name: String,
+    pub image: String,
+    pub description: String,
+    pub twitter: String,
+    pub website: String,
+    pub telegram: String,
 }
 
 impl Space for PredictionMarketParams {
@@ -45,6 +45,7 @@ pub struct Bet {
     pub amount: u64,
     pub option: u8,
     pub market: Pubkey,
+    pub claimed: bool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]

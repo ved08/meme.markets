@@ -14,16 +14,6 @@ describe("initialize program tests", () => {
     const program = anchor.workspace.Pumpstake as Program<Pumpstake>;
     const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
 
-    async function getSolanaClockTime(connection: anchor.web3.Connection) {
-        const clockAccountInfo = await connection.getAccountInfo(anchor.web3.SYSVAR_CLOCK_PUBKEY);
-        if (!clockAccountInfo) {
-            throw new Error("Failed to fetch Solana Clock sysvar");
-        }
-
-        const unixTimestamp = clockAccountInfo.data.readBigInt64LE(8); // Offset 8 for unix_timestamp
-        console.log("Solana On-Chain Time (Seconds):", unixTimestamp.toString());
-        return Number(unixTimestamp);
-    }
 
     let marketParams = {
         marketType: 0,
@@ -35,35 +25,7 @@ describe("initialize program tests", () => {
         website: "x.com",
         telegram: "telegram.org",
     }
-    class BettingOption {
-        option_id: number;
-        name: string;
-        image: string;
-        description: string;
-        liquidity: anchor.BN;
 
-        constructor(fields: {
-            option_id: number;
-            name: string;
-            image: string;
-            description: string;
-            liquidity: anchor.BN;
-        }) {
-            Object.assign(this, fields);
-        }
-    }
-    const BettingOptionSchema = new Map([
-        [
-            BettingOption,
-            struct([
-                u8("option_id"),
-                str("name"),
-                str("image"),
-                str("description"),
-                u64("liquidity"),
-            ]),
-        ],
-    ]);
     let seed = new anchor.BN(randomBytes(8)) // this is for coin toss bet
     let seed2 = new anchor.BN(randomBytes(8)) // this is for 5 options bet(polymarket)
     async function confirmTransaction(
@@ -381,39 +343,5 @@ describe("initialize program tests", () => {
         );
         console.log("created raydium pool, ", tx)
     })
-    // it("can allocate tokens to another user", async () => {
-    //     let betId = new anchor.BN(1111)
-    //     let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("market"), owner.publicKey.toBuffer(), seed2.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )
-    //     const bet = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("bet"), market.toBuffer(), anotherUser.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
-    //         program.programId
-    //     )[0]
-    //     let tx = await program.methods.claim2()
-    //         .accountsPartial({
-    //             bet,
-    //             market,
-    //         }).signers([owner])
-    //         .rpc()
-    //     console.log("Allocated tokens to another user", tx)
-    //     const marketData = await program.account.predictionMarket.fetch(market)
-    //     console.log("total winner liq: ", JSON.stringify(marketData))
 
-
-    //     let betId2 = new anchor.BN(5678)
-    //     const bet2 = anchor.web3.PublicKey.findProgramAddressSync(
-    //         [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId2.toArrayLike(Buffer, "le", 8)],
-    //         program.programId)[0]
-    //     tx = await program.methods.claim2()
-    //         .accountsPartial({
-    //             bet: bet2,
-    //             market,
-    //         }).signers([owner])
-    //         .rpc()
-    //     console.log("Allocated tokens to another another please check user", tx)
-    //     const marketData2 = await program.account.predictionMarket.fetch(market)
-    //     console.log("total winner liq: ", JSON.stringify(marketData2))
-    // })
 })

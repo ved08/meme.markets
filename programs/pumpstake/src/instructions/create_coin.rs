@@ -67,12 +67,10 @@ impl<'info> CreateCoin<'info> {
             .iter()
             .find(|opt| opt.option_id == self.market.winner.unwrap())
             .unwrap();
-        let uri_prefix = winner_option.image.clone();
-
         let token_data: DataV2 = DataV2 {
-            name: winner_option.name.clone(),
-            symbol: winner_option.name.clone(),
-            uri: uri_prefix,
+            name: self.market.data.name.clone(),
+            symbol: self.market.data.ticker.clone(),
+            uri: self.market.data.image.clone(),
             seller_fee_basis_points: 0,
             creators: None,
             collection: None,

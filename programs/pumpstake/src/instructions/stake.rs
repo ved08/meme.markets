@@ -48,6 +48,7 @@ impl<'info> Stake<'info> {
             amount,
             option,
             market: self.market.to_account_info().key(),
+            claimed: false,
         });
         let option = self
             .market
