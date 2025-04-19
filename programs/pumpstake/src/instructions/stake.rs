@@ -1,5 +1,6 @@
 use crate::error::*;
-use crate::state::{Bet, BettingOption, PredictionMarket};
+use crate::events::StakeEvent;
+use crate::state::{Bet, PredictionMarket};
 use anchor_lang::{
     prelude::*,
     system_program::{transfer, Transfer},
@@ -33,7 +34,7 @@ pub struct Stake<'info> {
     pub system_program: Program<'info, System>,
 }
 impl<'info> Stake<'info> {
-    pub fn place_bet(&mut self, bet_id: u64, option: u8, amount: u64) -> Result<()> {
+    pub fn place_bet(&mut self, bet_id: u64, option_id: u8, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
         let timestamp = clock.unix_timestamp;
         require!(
@@ -46,7 +47,7 @@ impl<'info> Stake<'info> {
             placed_at: timestamp,
             bettor: self.signer.to_account_info().key(),
             amount,
-            option,
+            option: option_id,
             market: self.market.to_account_info().key(),
             claimed: false,
         });
@@ -54,7 +55,7 @@ impl<'info> Stake<'info> {
             .market
             .market_options
             .iter_mut()
-            .find(|opt| opt.option_id == option)
+            .find(|opt| opt.option_id == option_id)
             .unwrap();
         option.liquidity += amount;
 
@@ -64,6 +65,16 @@ impl<'info> Stake<'info> {
         };
         let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
         transfer(ctx, amount)?;
+        emit!(StakeEvent {
+            bet_id,
+            market_id: self.market.market_id,
+            placed_at: timestamp,
+            bettor: self.signer.to_account_info().key(),
+            amount,
+            option: option_id,
+            market: self.market.to_account_info().key(),
+            claimed: false,
+        });
         self.market.total_mc += amount;
         Ok(())
     }

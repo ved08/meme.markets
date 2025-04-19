@@ -8,7 +8,7 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{error::PumpstakeErrors, state::PredictionMarket};
+use crate::{error::PumpstakeErrors, events::TokenDataForRaydium, state::PredictionMarket};
 
 #[derive(Accounts)]
 pub struct TransferTokensToCreator<'info> {
@@ -112,6 +112,10 @@ impl<'info> TransferTokensToCreator<'info> {
             CpiContext::new_with_signer(self.token_program.to_account_info(), accounts, &signer);
         let tokens_to_send = self.token_reserve.amount;
         transfer_checked(ctx, tokens_to_send, self.mint.decimals)?;
+        emit!(TokenDataForRaydium {
+            wsol_amount: balance,
+            token_amount: tokens_to_send
+        });
         Ok(())
     }
 }

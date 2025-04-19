@@ -13,7 +13,9 @@ describe("initialize program tests", () => {
     const marketCreator = anchor.web3.Keypair.generate();
     const program = anchor.workspace.Pumpstake as Program<Pumpstake>;
     const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
-
+    const stakeEvent = program.addEventListener("stakeEvent", (e, slot) => {
+        console.log("Someone staked and here's the details", JSON.stringify(e))
+    })
 
     let marketParams = {
         marketType: 0,
@@ -303,7 +305,6 @@ describe("initialize program tests", () => {
             if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
             console.log("Tx: ", tx)
             const marketData = await program.account.predictionMarket.fetch(market)
-            console.log("total winner liq: ", JSON.stringify(marketData))
         }
     })
     it("can transfer tokens to raydium and create raydium pool", async () => {
@@ -316,6 +317,37 @@ describe("initialize program tests", () => {
             program.programId
         )[0]
         const wsolMint = new anchor.web3.PublicKey("So11111111111111111111111111111111111111112")
+        const eventPromise = new Promise(async (resolve, reject) => {
+            const eventListener = await program.addEventListener("tokenDataForRaydium", async (e, slot) => {
+                console.log("Event data got: ", e.tokenAmount, e.wsolAmount)
+
+                try {
+                    const { poolAddress, cpSwapPoolState, tx } = await initialize(
+                        program,
+                        owner.publicKey,
+                        configAddress,
+                        wsolMint,
+                        TOKEN_PROGRAM_ID,
+                        mint,
+                        TOKEN_PROGRAM_ID,
+                        { initAmount0: e.wsolAmount, initAmount1: e.tokenAmount }
+                    );
+                    console.log("created raydium pool, ", tx)
+
+                    await program.removeEventListener(eventListener);
+                    resolve(true);
+                } catch (err) {
+                    await program.removeEventListener(eventListener);
+                    reject(err);
+                }
+            });
+
+            // Set a timeout so it doesn’t hang forever
+            setTimeout(async () => {
+                await program.removeEventListener(eventListener);
+                reject("Event not received in time");
+            }, 10_000); // 10 seconds
+        });
         const tx1 = await program.methods.transferTokensToCreator()
             .accountsPartial({
                 signer: owner.publicKey,
@@ -328,20 +360,28 @@ describe("initialize program tests", () => {
             })
             .signers([owner])
             .rpc()
-        console.log("TRransferred tokens to creator: ", tx1)
-        const initAmount0 = new BN(10000000000);
-        const initAmount1 = new BN(20000000000);
-        const { poolAddress, cpSwapPoolState, tx } = await initialize(
-            program,
-            owner.publicKey,
-            configAddress,
-            wsolMint,
-            TOKEN_PROGRAM_ID,
-            mint,
-            TOKEN_PROGRAM_ID,
-            { initAmount0, initAmount1 }
-        );
-        console.log("created raydium pool, ", tx)
+
+        console.log("Transferred tokens to creator: ", tx1)
+        // const eventListener = program.addEventListener("tokenDataForRaydium", async (e, slot) => {
+        //     console.log("Event data got: ", e.tokenAmount, e.wsolAmount)
+        //     const wsolAmount = e.wsolAmount;
+        //     const tokenAmount = e.tokenAmount;
+        //     const { poolAddress, cpSwapPoolState, tx } = await initialize(
+        //         program,
+        //         owner.publicKey,
+        //         configAddress,
+        //         wsolMint,
+        //         TOKEN_PROGRAM_ID,
+        //         mint,
+        //         TOKEN_PROGRAM_ID,
+        //         { initAmount0: wsolAmount, initAmount1: tokenAmount }
+        //     );
+        //     console.log("created raydium pool, ", tx)
+        // });
+    })
+
+    it("can close event listeners", async () => {
+        await program.removeEventListener(stakeEvent)
     })
 
 })
