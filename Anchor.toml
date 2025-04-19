@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-pumpstake = "HUq6sXsfmNeGj3mfcaeSohyhBoVB29u5QMsUWs4bEgpj"
+pumpstake = "A8p7WQhmsfehVug9nJzYMwPgqjx4gxGNBmWGJsbCWcVq"
 
 [registry]
 url = "https://api.apr.dev"

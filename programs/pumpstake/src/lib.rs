@@ -4,8 +4,10 @@ use instructions::*;
 mod state;
 use state::*;
 mod error;
+mod events;
 mod utils;
-declare_id!("HUq6sXsfmNeGj3mfcaeSohyhBoVB29u5QMsUWs4bEgpj");
+use events::*;
+declare_id!("A8p7WQhmsfehVug9nJzYMwPgqjx4gxGNBmWGJsbCWcVq");
 
 #[program]
 pub mod pumpstake {
