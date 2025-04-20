@@ -42,7 +42,7 @@ impl<'info> CreatePredictionMarket<'info> {
             PumpstakeErrors::MaxOptionsExceeded
         );
         let clock = Clock::get().unwrap();
-        let start_time = clock.unix_timestamp * 1000;
+        let start_time = clock.unix_timestamp;
         let end_time = start_time.checked_add(duration).unwrap();
 
         let rent = Rent::get()?;
@@ -76,7 +76,7 @@ impl<'info> CreatePredictionMarket<'info> {
             total_mc: 0,
             winner: None,
             graduate: None,
-            total_tokens: 80_000_000_000_000, //total supply is this
+            total_tokens: 1_000_000_000_000_000, //total supply is this
         });
         Ok(())
     }

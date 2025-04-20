@@ -326,11 +326,11 @@ describe("initialize program tests", () => {
                         program,
                         owner.publicKey,
                         configAddress,
-                        wsolMint,
-                        TOKEN_PROGRAM_ID,
                         mint,
                         TOKEN_PROGRAM_ID,
-                        { initAmount0: e.wsolAmount, initAmount1: e.tokenAmount }
+                        wsolMint,
+                        TOKEN_PROGRAM_ID,
+                        { initAmount0: e.tokenAmount, initAmount1: e.wsolAmount }
                     );
                     console.log("created raydium pool, ", tx)
 

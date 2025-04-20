@@ -18,11 +18,8 @@ pub struct ResolveMarket<'info> {
 }
 impl<'info> ResolveMarket<'info> {
     pub fn resolve_winner(&mut self, option: u8) -> Result<()> {
-        // require_keys_eq!(
-        //     self.market.owner,
-        //     self.signer.to_account_info().key(),
-        //     PumpstakeErrors::NotAuthorized
-        // );
+        // ADD THIS LATER
+        // require!(self.market.is_active, PumpstakeErrors::MarketExpired);
         let clock = Clock::get().unwrap();
         let timestamp = clock.unix_timestamp * 1000;
         require!(
