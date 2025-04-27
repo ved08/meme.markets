@@ -56,16 +56,30 @@ impl<'info> ClaimTokenReward<'info> {
 
         let is_winner = self.bet.option == self.market.winner.unwrap();
         if is_winner {
-            let losers_liquidity = self.market.total_mc
-                - self
-                    .market
-                    .market_options
-                    .iter()
-                    .find(|opt| opt.option_id == self.market.winner.unwrap())
-                    .unwrap()
-                    .liquidity;
-            let winner_liquidity = self.market.total_mc - losers_liquidity;
-            let winner_share_amount = (self.bet.amount / winner_liquidity) * (losers_liquidity / 2);
+            let total_winner_liquidity = self
+                .market
+                .market_options
+                .iter()
+                .find(|opt| opt.option_id == self.market.winner.unwrap())
+                .unwrap()
+                .liquidity;
+            let loser_liquidity = self.market.total_mc - total_winner_liquidity;
+
+            let reward_pool = loser_liquidity / 2;
+            msg!("winner: {}, claimed: {}", total_winner_liquidity, self.market.claimed_winner_liquidity);
+            let remaining_winner_liquidity =
+                total_winner_liquidity
+                - self.market.claimed_winner_liquidity;
+            msg!("reward_pool: {}, distributed: {}", reward_pool, self.market.distributed_rewards);
+            let remaining_reward_pool = reward_pool.checked_sub(self.market.distributed_rewards).unwrap();
+
+            let ratio = self.bet.amount as u128 * 1_000_000 / remaining_winner_liquidity as u128;
+            let reward_share = remaining_reward_pool as u128 * ratio / 1_000_000;
+
+            let winner_share_amount = reward_share as u64;
+
+            self.market.claimed_winner_liquidity += self.bet.amount;
+            self.market.distributed_rewards += reward_share as u64;
 
             let signer_seeds: &[&[&[u8]]] = &[&[
                 b"vault",
@@ -82,14 +96,32 @@ impl<'info> ClaimTokenReward<'info> {
                 signer_seeds,
             );
             transfer(ctx, winner_share_amount)?;
-            self.market.total_mc -= winner_share_amount;
+            // self.market.total_mc -= winner_share_amount;
         }
-        let tokens_to_send = calculate_tokens_to_send(
+        let (tokens_to_send, refund_amount) = calculate_tokens_to_send(
             self.bet.amount, 
             self.market.total_mc,
             self.market.total_tokens,
             is_winner
         );
+
+        if refund_amount > 0 {
+            let signer_seeds: &[&[&[u8]]] = &[&[
+                b"vault",
+                self.market.to_account_info().key.as_ref(),
+                &[bumps.market_vault],
+            ]];
+            let accounts = Transfer {
+                from: self.market_vault.to_account_info(),
+                to: self.receiver.to_account_info(),
+            };
+            let ctx = CpiContext::new_with_signer(
+                self.system_program.to_account_info(),
+                accounts,
+                signer_seeds,
+            );
+            transfer(ctx, refund_amount)?;
+        }
 
         let accounts = TransferChecked {
             from: self.token_reserve.to_account_info(),
@@ -115,7 +147,9 @@ impl<'info> ClaimTokenReward<'info> {
         let option = self.market.market_options.iter_mut()
         .find(|opt| opt.option_id == self.bet.option).unwrap();
         
-        option.liquidity -= self.bet.amount;
+        if is_winner == false {
+            option.liquidity -= self.bet.amount;
+        }
         self.market.total_tokens -= tokens_to_send;
         
         msg!("Tokens allocated: {}", tokens_to_send);

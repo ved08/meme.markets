@@ -14,7 +14,7 @@ pub struct PredictionMarketParams {
 }
 
 impl Space for PredictionMarketParams {
-    const INIT_SPACE: usize = 8 + 36 + 76 + 154 + 36 + 36 + 36;
+    const INIT_SPACE: usize = 1 + 30 + 30 + 150 + 200 + 50 + 50 + 35;
 }
 
 #[account]
@@ -33,6 +33,9 @@ pub struct PredictionMarket {
     pub data: PredictionMarketParams,
     pub total_tokens: u64,
     pub graduate: Option<bool>,
+    pub claimed_winner_liquidity: u64, // How much winner liquidity has been claimed
+    pub distributed_rewards: u64,      // How much reward pool has been paid
+    pub winner_present: bool,
 }
 
 #[account]
@@ -58,5 +61,5 @@ pub struct BettingOption {
 }
 
 impl Space for BettingOption {
-    const INIT_SPACE: usize = 1 + 10 + 100 + 154 + 8;
+    const INIT_SPACE: usize = 1 + 30 + 150 + 200 + 8;
 }

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::error::*;
 use crate::events::StakeEvent;
 use crate::state::{Bet, PredictionMarket};
@@ -31,16 +33,28 @@ pub struct Stake<'info> {
         bump
     )]
     pub bet: Account<'info, Bet>,
+    ///CHECK: this is revenue wallet
+    #[account(mut)]
+    pub revenue: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 impl<'info> Stake<'info> {
     pub fn place_bet(&mut self, bet_id: u64, option_id: u8, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
         let timestamp = clock.unix_timestamp;
+        let revenue_pubkey =
+            Pubkey::from_str("GmkqS3uguupCzEbwcWYnRrhtSvNZj2ycUWWSCE4QHedr").unwrap();
+        require_keys_eq!(
+            self.revenue.key(),
+            revenue_pubkey,
+            PumpstakeErrors::IncorrectRevenueWallet
+        );
         require!(
             timestamp < self.market.end_time,
             PumpstakeErrors::MarketExpired
         );
+        let share = amount * 2 / 100;
+        let amount = amount - share;
         self.bet.set_inner(Bet {
             bet_id,
             market_id: self.market.market_id,
@@ -65,6 +79,13 @@ impl<'info> Stake<'info> {
         };
         let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
         transfer(ctx, amount)?;
+        let accounts = Transfer {
+            from: self.signer.to_account_info(),
+            to: self.revenue.to_account_info(),
+        };
+        let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
+        transfer(ctx, share)?;
+
         emit!(StakeEvent {
             bet_id,
             market_id: self.market.market_id,

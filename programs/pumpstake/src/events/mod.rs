@@ -16,4 +16,6 @@ pub struct StakeEvent {
 pub struct TokenDataForRaydium {
     pub wsol_amount: u64,
     pub token_amount: u64,
+    pub mint: Pubkey,
+    pub market_owner: Pubkey,
 }

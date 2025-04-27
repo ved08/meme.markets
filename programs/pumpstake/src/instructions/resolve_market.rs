@@ -26,6 +26,7 @@ impl<'info> ResolveMarket<'info> {
             self.market.end_time <= timestamp,
             PumpstakeErrors::MarketActive
         );
+
         msg!("self.market = {}", self.market.end_time);
         msg!("total market cap = {}", self.market.total_mc);
         // CHANGE THIS TO 100
@@ -36,6 +37,19 @@ impl<'info> ResolveMarket<'info> {
         }
         self.market.is_active = false;
         self.market.winner = Some(option);
+
+        let mut winner_present = true;
+        if let Some(id) = self.market.winner {
+            for opt in self.market.market_options.iter() {
+                if opt.option_id == id {
+                    if opt.liquidity == 0 {
+                        winner_present = false;
+                    }
+                    break;
+                }
+            }
+        }
+        self.market.winner_present = winner_present;
         Ok(())
     }
 }

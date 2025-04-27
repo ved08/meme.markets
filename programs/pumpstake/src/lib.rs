@@ -6,7 +6,7 @@ use state::*;
 mod error;
 mod events;
 mod utils;
-use events::*;
+use error::PumpstakeErrors;
 declare_id!("A8p7WQhmsfehVug9nJzYMwPgqjx4gxGNBmWGJsbCWcVq");
 
 #[program]
@@ -40,19 +40,39 @@ pub mod pumpstake {
         Ok(())
     }
     pub fn create_coin(ctx: Context<CreateCoin>) -> Result<()> {
+        require!(
+            ctx.accounts.market.winner_present,
+            PumpstakeErrors::RefundOnly
+        );
         ctx.accounts.create_mint(&ctx.bumps)?;
         ctx.accounts.mint_to_reserve(&ctx.bumps)?;
         Ok(())
     }
     pub fn claim(ctx: Context<ClaimReward>) -> Result<()> {
+        require!(
+            ctx.accounts.market.winner_present,
+            PumpstakeErrors::RefundOnly
+        );
         ctx.accounts.claim_reward(&ctx.bumps)?;
         Ok(())
     }
     pub fn claim2(ctx: Context<ClaimTokenReward>) -> Result<()> {
+        require!(
+            ctx.accounts.market.winner_present,
+            PumpstakeErrors::RefundOnly
+        );
         ctx.accounts.claim_tokens(&ctx.bumps)?;
         Ok(())
     }
+    pub fn refund(ctx: Context<Refund>) -> Result<()> {
+        ctx.accounts.refund(&ctx.bumps)?;
+        Ok(())
+    }
     pub fn transfer_tokens_to_creator(ctx: Context<TransferTokensToCreator>) -> Result<()> {
+        require!(
+            ctx.accounts.market.winner_present,
+            PumpstakeErrors::RefundOnly
+        );
         ctx.accounts.transfer_tokens_to_creator_ata(&ctx.bumps)?;
         Ok(())
     }

@@ -47,6 +47,7 @@ pub struct CreateCoin<'info> {
 }
 impl<'info> CreateCoin<'info> {
     pub fn create_mint(&mut self, bumps: &CreateCoinBumps) -> Result<()> {
+        require!(self.market.winner_present, PumpstakeErrors::RefundOnly);
         require!(
             self.market.graduate.unwrap(),
             PumpstakeErrors::TokenCreationNotAllowed
@@ -113,7 +114,7 @@ impl<'info> CreateCoin<'info> {
         };
         let ctx =
             CpiContext::new_with_signer(self.token_program.to_account_info(), accounts, &signer);
-        let amount = 80_000_000 * u64::pow(10, self.mint.decimals as u32);
+        let amount = 1_000_000_000 * u64::pow(10, self.mint.decimals as u32);
         mint_to(ctx, amount)?;
         Ok(())
     }

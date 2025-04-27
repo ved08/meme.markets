@@ -60,19 +60,33 @@ impl<'info> ClaimReward<'info> {
         );
         // If winner
         if self.bet.option.eq(&self.market.winner.unwrap()) {
-            // Distribute funds here or calculate for raydium
-            // if self.market.total_mc < 100 * LAMPORTS_PER_SOL {
-            // refund process
-            let losers_liquidity = self.market.total_mc
-                - self
-                    .market
-                    .market_options
-                    .iter()
-                    .find(|opt| opt.option_id == self.market.winner.unwrap())
-                    .unwrap()
-                    .liquidity;
-            let winner_liquidity = self.market.total_mc - losers_liquidity;
-            let winner_share_amount = (self.bet.amount / winner_liquidity) * (losers_liquidity / 2);
+            let total_winner_liquidity = self
+                .market
+                .market_options
+                .iter()
+                .find(|opt| opt.option_id == self.market.winner.unwrap())
+                .unwrap()
+                .liquidity;
+            let loser_liquidity = self.market.total_mc - total_winner_liquidity;
+
+            let reward_pool = loser_liquidity / 2;
+
+            let remaining_winner_liquidity =
+                total_winner_liquidity - self.market.claimed_winner_liquidity;
+            let remaining_reward_pool = reward_pool - self.market.distributed_rewards;
+
+            let ratio = self.bet.amount as u128 * 1_000_000 / remaining_winner_liquidity as u128;
+            let reward_share = remaining_reward_pool as u128 * ratio / 1_000_000;
+
+            let winner_share_amount = self.bet.amount + reward_share as u64;
+
+            self.market.claimed_winner_liquidity += self.bet.amount;
+            self.market.distributed_rewards += reward_share as u64;
+            msg!(
+                "Winner bet amount + reward = {} + {}",
+                self.bet.amount,
+                reward_share
+            );
 
             let signer_seeds: &[&[&[u8]]] = &[&[
                 b"vault",
@@ -93,16 +107,13 @@ impl<'info> ClaimReward<'info> {
             //     // create amm will come in resolve_market.rs
             // }
         } else {
-            // Refund to the loser
-            let losers_liquidity = (self.market.total_mc
-                - self
-                    .market
-                    .market_options
-                    .iter()
-                    .find(|opt| opt.option_id == self.market.winner.unwrap())
-                    .unwrap()
-                    .liquidity);
-            let loser_share_amount = (self.bet.amount / losers_liquidity) * (losers_liquidity / 2);
+            let loser_share_amount = self.bet.amount / 2;
+
+            msg!(
+                "loser bet amt = {}, refund = {}",
+                self.bet.amount,
+                loser_share_amount
+            );
 
             let signer_seeds: &[&[&[u8]]] = &[&[
                 b"vault",

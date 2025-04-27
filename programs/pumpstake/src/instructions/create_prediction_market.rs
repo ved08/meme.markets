@@ -76,7 +76,10 @@ impl<'info> CreatePredictionMarket<'info> {
             total_mc: 0,
             winner: None,
             graduate: None,
-            total_tokens: 1_000_000_000_000_000, //total supply is this
+            total_tokens: 1_000_000_000_000_000,
+            claimed_winner_liquidity: 0,
+            distributed_rewards: 0,
+            winner_present: false,
         });
         Ok(())
     }

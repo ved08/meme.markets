@@ -114,7 +114,9 @@ impl<'info> TransferTokensToCreator<'info> {
         transfer_checked(ctx, tokens_to_send, self.mint.decimals)?;
         emit!(TokenDataForRaydium {
             wsol_amount: balance,
-            token_amount: tokens_to_send
+            token_amount: tokens_to_send,
+            mint: self.mint.to_account_info().key(),
+            market_owner: self.market.owner
         });
         Ok(())
     }

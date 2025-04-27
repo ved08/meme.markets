@@ -3,7 +3,7 @@ import { Program, BN } from "@coral-xyz/anchor";
 import { Pumpstake } from "../target/types/pumpstake";
 import { randomBytes } from "crypto"
 import { str, struct, u64, u8 } from "@coral-xyz/borsh"
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAccount, getAssociatedTokenAddress, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { configAddress } from "./config";
 import { initialize } from "./utils";
 describe("initialize program tests", () => {
@@ -126,13 +126,14 @@ describe("initialize program tests", () => {
             program.programId
         )[0]
         console.log("THIS IS BET ACCOUNT: ", bet.toBase58())
-        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 100)
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 6)
         const option_id = 1 //lets assume 1 to be heads in coin toss
         const tx = await program.methods.stake(betId, option_id, amount)
             .accountsPartial({
                 signer: owner.publicKey,
                 market: market,
                 bet: bet,
+                revenue: new anchor.web3.PublicKey("GmkqS3uguupCzEbwcWYnRrhtSvNZj2ycUWWSCE4QHedr")
 
             }).signers([owner]).rpc()
         console.log("Sucessfully staked on heads: ", tx)
@@ -147,13 +148,14 @@ describe("initialize program tests", () => {
             [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
-        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 1)
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 6)
         const option_id = 0 // lets assume 0 to be tails
         const tx = await program.methods.stake(betId, option_id, amount)
             .accountsPartial({
                 signer: owner.publicKey,
                 market: market,
-                bet: bet
+                bet: bet,
+                revenue: new anchor.web3.PublicKey("GmkqS3uguupCzEbwcWYnRrhtSvNZj2ycUWWSCE4QHedr")
             }).signers([owner]).rpc()
         console.log("Sucessfully staked on tails: ", tx)
         const data = await program.account.predictionMarket.fetch(market)
@@ -169,17 +171,18 @@ describe("initialize program tests", () => {
             [Buffer.from("bet"), market.toBuffer(), anotherUser.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
-        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 1)
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 0.001)
         const option_id = 0 // lets assume 0 to be tails
-        const tx = await program.methods.stake(betId, option_id, amount)
-            .accountsPartial({
-                signer: anotherUser.publicKey,
-                market: market,
-                bet: bet
-            }).signers([anotherUser]).rpc()
-        console.log("Sucessfully staked on tails: ", tx)
-        const data = await program.account.predictionMarket.fetch(market)
-        console.log(data.marketOptions[0].liquidity.toNumber())
+        // const tx = await program.methods.stake(betId, option_id, amount)
+        //     .accountsPartial({
+        //         signer: anotherUser.publicKey,
+        //         market: market,
+        //         bet: bet,
+        //         revenue: new anchor.web3.PublicKey("GmkqS3uguupCzEbwcWYnRrhtSvNZj2ycUWWSCE4QHedr")
+        //     }).signers([anotherUser]).rpc()
+        // console.log("Sucessfully staked on tails: ", tx)
+        // const data = await program.account.predictionMarket.fetch(market)
+        // console.log(data.marketOptions[0].liquidity.toNumber())
     })
     it("can resolve the coin toss market and mark a winner", async () => {
         await new Promise(resolve => setTimeout(resolve, 1050));
@@ -196,7 +199,7 @@ describe("initialize program tests", () => {
             .rpc()
         console.log("resolved winner: ", tx)
         const data = await program.account.predictionMarket.fetch(market)
-        if (data.graduate) {
+        if (data.graduate && data.winnerPresent) {
             console.log("-------------CREATING A COIN----------------")
             const mint = anchor.web3.PublicKey.findProgramAddressSync(
                 [Buffer.from("mint"), market.toBuffer()],
@@ -229,7 +232,7 @@ describe("initialize program tests", () => {
         }
     })
     it("can close and distribute rewards and amounts", async () => {
-        let betId1 = new anchor.BN(69420)
+        let betId1 = new anchor.BN(69420) // loser
         let betId2 = new anchor.BN(69)
         let betId3 = new anchor.BN(70)
         let [market, _] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -249,48 +252,111 @@ describe("initialize program tests", () => {
             [Buffer.from("bet"), market.toBuffer(), anotherUser.publicKey.toBuffer(), betId3.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
-        if (data.graduate == false) {
-            let tx = await program.methods.claim()
-                .accountsPartial({
-                    bet: bet1,
-                    market,
-                    reciever: owner.publicKey,
+        if (data.winnerPresent) {
 
-                }).signers([owner])
-                .rpc()
-            console.log("successfully refunded: ", tx)
+            if (data.graduate == false) {
+                let tx = await program.methods.claim()
+                    .accountsPartial({
+                        bet: bet1,
+                        market,
+                        reciever: owner.publicKey,
 
+                    }).signers([owner])
+                    .rpc()
+                console.log("successfully refunded: ", tx)
+                let tx2 = await program.methods.claim()
+                    .accountsPartial({
+                        bet: bet2,
+                        market,
+                        reciever: owner.publicKey,
+
+                    }).signers([owner])
+                    .rpc()
+                console.log("successfully refunded2: ", tx2)
+                let tx3 = await program.methods.claim()
+                    .accountsPartial({
+                        bet: bet3,
+                        market,
+                        reciever: anotherUser.publicKey,
+
+                    }).signers([owner])
+                    .rpc()
+                console.log("successfully resolved bet: ", tx3)
+
+
+            } else {
+                let ix1 = await program.methods.claim2()
+                    .accountsPartial({
+                        bet: bet1,
+                        marketCreator: marketCreator.publicKey,
+                        market,
+                        receiver: owner.publicKey,
+                        tokenProgram: TOKEN_PROGRAM_ID
+                    }).signers([owner])
+                    .instruction()
+                let ix2 = await program.methods.claim2()
+                    .accountsPartial({
+                        bet: bet2,
+                        market,
+                        marketCreator: marketCreator.publicKey,
+                        receiver: owner.publicKey,
+                        tokenProgram: TOKEN_PROGRAM_ID
+                    }).signers([owner])
+                    .instruction()
+                let ix3 = await program.methods.claim2()
+                    .accountsPartial({
+                        bet: bet3,
+                        market,
+                        marketCreator: marketCreator.publicKey,
+                        receiver: anotherUser.publicKey,
+                        tokenProgram: TOKEN_PROGRAM_ID
+                    }).signers([owner])
+                    .instruction()
+
+                const instructions: anchor.web3.TransactionInstruction[] = [
+                    ix1, ix2,
+                    // ix3
+                ]
+                let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
+                const messageV0 = new anchor.web3.TransactionMessage({
+                    payerKey: owner.publicKey,
+                    recentBlockhash: blockhash,
+                    instructions: instructions
+                }).compileToV0Message()
+                const transaction = new anchor.web3.VersionedTransaction(messageV0)
+                transaction.sign([owner])
+                const tx = await provider.connection.sendTransaction(transaction)
+                const confirmation = await confirmTransaction(provider.connection, tx)
+                if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
+                console.log("Tx: ", tx)
+            }
         } else {
-            let ix1 = await program.methods.claim2()
+            console.log("NO WINNER FOUND. REFUNDING ALL BET AMOUNTS")
+            let ix1 = await program.methods.refund()
                 .accountsPartial({
                     bet: bet1,
-                    marketCreator: marketCreator.publicKey,
                     market,
-                    receiver: owner.publicKey,
-                    tokenProgram: TOKEN_PROGRAM_ID
+                    reciever: owner.publicKey
                 }).signers([owner])
                 .instruction()
-            let ix2 = await program.methods.claim2()
+            let ix2 = await program.methods.refund()
                 .accountsPartial({
                     bet: bet2,
                     market,
-                    marketCreator: marketCreator.publicKey,
-                    receiver: owner.publicKey,
-                    tokenProgram: TOKEN_PROGRAM_ID
+                    reciever: owner.publicKey
                 }).signers([owner])
                 .instruction()
-            let ix3 = await program.methods.claim2()
+            let ix3 = await program.methods.refund()
                 .accountsPartial({
                     bet: bet3,
                     market,
-                    marketCreator: marketCreator.publicKey,
-                    receiver: anotherUser.publicKey,
-                    tokenProgram: TOKEN_PROGRAM_ID
+                    reciever: anotherUser.publicKey,
                 }).signers([owner])
                 .instruction()
 
             const instructions: anchor.web3.TransactionInstruction[] = [
-                ix1, ix2, ix3
+                ix1, ix2,
+                // ix3
             ]
             let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
             const messageV0 = new anchor.web3.TransactionMessage({
@@ -303,8 +369,7 @@ describe("initialize program tests", () => {
             const tx = await provider.connection.sendTransaction(transaction)
             const confirmation = await confirmTransaction(provider.connection, tx)
             if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
-            console.log("Tx: ", tx)
-            const marketData = await program.account.predictionMarket.fetch(market)
+            console.log("Refunded all accounts: ", tx)
         }
     })
     it("can transfer tokens to raydium and create raydium pool", async () => {
@@ -317,51 +382,52 @@ describe("initialize program tests", () => {
             program.programId
         )[0]
         const wsolMint = new anchor.web3.PublicKey("So11111111111111111111111111111111111111112")
-        const eventPromise = new Promise(async (resolve, reject) => {
-            const eventListener = await program.addEventListener("tokenDataForRaydium", async (e, slot) => {
-                console.log("Event data got: ", e.tokenAmount, e.wsolAmount)
 
-                try {
-                    const { poolAddress, cpSwapPoolState, tx } = await initialize(
-                        program,
-                        owner.publicKey,
-                        configAddress,
-                        mint,
-                        TOKEN_PROGRAM_ID,
-                        wsolMint,
-                        TOKEN_PROGRAM_ID,
-                        { initAmount0: e.tokenAmount, initAmount1: e.wsolAmount }
-                    );
-                    console.log("created raydium pool, ", tx)
+        // const eventListener = await program.addEventListener("tokenDataForRaydium", async (e, slot) => {
+        // console.log("Event data got: ", e.tokenAmount, e.wsolAmount, e)
 
-                    await program.removeEventListener(eventListener);
-                    resolve(true);
-                } catch (err) {
-                    await program.removeEventListener(eventListener);
-                    reject(err);
-                }
-            });
+        try {
+            const tokenAccount = getAssociatedTokenAddressSync(mint, market, true)
+            const tokenBalance = (await getAccount(provider.connection, tokenAccount)).amount.toString()
+            const marketVault = anchor.web3.PublicKey.findProgramAddressSync(
+                [Buffer.from("vault"), market.toBuffer()],
+                program.programId
+            )[0]
+            const marketVaultBalance = await provider.connection.getBalance(marketVault)
+            console.log("BALANCES ARE: ", tokenBalance, marketVaultBalance)
+            const tx1 = await program.methods.transferTokensToCreator()
+                .accountsPartial({
+                    signer: owner.publicKey,
+                    marketCreator: marketCreator.publicKey,
+                    market,
+                    wsolMint,
+                    mint,
+                    tokenProgram: TOKEN_PROGRAM_ID,
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
+                })
+                .signers([owner])
+                .rpc()
 
-            // Set a timeout so it doesn’t hang forever
-            setTimeout(async () => {
-                await program.removeEventListener(eventListener);
-                reject("Event not received in time");
-            }, 10_000); // 10 seconds
-        });
-        const tx1 = await program.methods.transferTokensToCreator()
-            .accountsPartial({
-                signer: owner.publicKey,
-                marketCreator: marketCreator.publicKey,
-                market,
+            console.log("Transferred tokens to creator: ", tx1)
+            const { poolAddress, cpSwapPoolState, tx } = await initialize(
+                program,
+                owner.publicKey,
+                configAddress,
                 wsolMint,
+                TOKEN_PROGRAM_ID,
                 mint,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
-            })
-            .signers([owner])
-            .rpc()
+                TOKEN_PROGRAM_ID,
+                { initAmount0: new anchor.BN(marketVaultBalance), initAmount1: new anchor.BN(tokenBalance) }
+            );
+            console.log("created raydium pool, ", tx)
 
-        console.log("Transferred tokens to creator: ", tx1)
+        } catch (err) {
+            console.log("Cannot transfer to raydium, ", err);
+        }
+        // });
+
+        // Set a timeout so it doesn’t hang forever
+
         // const eventListener = program.addEventListener("tokenDataForRaydium", async (e, slot) => {
         //     console.log("Event data got: ", e.tokenAmount, e.wsolAmount)
         //     const wsolAmount = e.wsolAmount;

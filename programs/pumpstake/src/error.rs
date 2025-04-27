@@ -22,4 +22,10 @@ pub enum PumpstakeErrors {
     NoFundsInVault,
     #[msg("Bet reward already claimed")]
     RewardAlreadyClaimed,
+    #[msg("Winner already present. Cannot refund")]
+    CannotRefund,
+    #[msg("Cannot proceed. Please refund all the amounts")]
+    RefundOnly,
+    #[msg("Incorrect revenue wallet. Please provide correct one")]
+    IncorrectRevenueWallet,
 }
