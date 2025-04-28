@@ -30,6 +30,7 @@ pub struct PredictionMarket {
     pub is_active: bool,
     pub winner: Option<u8>,
     pub total_mc: u64,
+    pub virtual_sol_reserve: u64,
     pub data: PredictionMarketParams,
     pub total_tokens: u64,
     pub graduate: Option<bool>,

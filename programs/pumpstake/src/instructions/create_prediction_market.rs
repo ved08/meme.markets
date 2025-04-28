@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::native_token::LAMPORTS_PER_SOL;
 use anchor_lang::system_program::{transfer, Transfer};
 
 use crate::error::PumpstakeErrors;
@@ -74,6 +75,7 @@ impl<'info> CreatePredictionMarket<'info> {
             is_active: true,
             data: params,
             total_mc: 0,
+            virtual_sol_reserve: 25 * LAMPORTS_PER_SOL,
             winner: None,
             graduate: None,
             total_tokens: 1_000_000_000_000_000,

@@ -126,7 +126,7 @@ describe("initialize program tests", () => {
             program.programId
         )[0]
         console.log("THIS IS BET ACCOUNT: ", bet.toBase58())
-        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 6)
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 100)
         const option_id = 1 //lets assume 1 to be heads in coin toss
         const tx = await program.methods.stake(betId, option_id, amount)
             .accountsPartial({
@@ -148,7 +148,7 @@ describe("initialize program tests", () => {
             [Buffer.from("bet"), market.toBuffer(), owner.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
-        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 6)
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 1)
         const option_id = 0 // lets assume 0 to be tails
         const tx = await program.methods.stake(betId, option_id, amount)
             .accountsPartial({
@@ -171,18 +171,18 @@ describe("initialize program tests", () => {
             [Buffer.from("bet"), market.toBuffer(), anotherUser.publicKey.toBuffer(), betId.toArrayLike(Buffer, "le", 8)],
             program.programId
         )[0]
-        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 0.001)
+        const amount = new anchor.BN(anchor.web3.LAMPORTS_PER_SOL * 0.1)
         const option_id = 0 // lets assume 0 to be tails
-        // const tx = await program.methods.stake(betId, option_id, amount)
-        //     .accountsPartial({
-        //         signer: anotherUser.publicKey,
-        //         market: market,
-        //         bet: bet,
-        //         revenue: new anchor.web3.PublicKey("GmkqS3uguupCzEbwcWYnRrhtSvNZj2ycUWWSCE4QHedr")
-        //     }).signers([anotherUser]).rpc()
-        // console.log("Sucessfully staked on tails: ", tx)
-        // const data = await program.account.predictionMarket.fetch(market)
-        // console.log(data.marketOptions[0].liquidity.toNumber())
+        const tx = await program.methods.stake(betId, option_id, amount)
+            .accountsPartial({
+                signer: anotherUser.publicKey,
+                market: market,
+                bet: bet,
+                revenue: new anchor.web3.PublicKey("GmkqS3uguupCzEbwcWYnRrhtSvNZj2ycUWWSCE4QHedr")
+            }).signers([anotherUser]).rpc()
+        console.log("Sucessfully staked on tails: ", tx)
+        const data = await program.account.predictionMarket.fetch(market)
+        console.log(data.marketOptions[0].liquidity.toNumber())
     })
     it("can resolve the coin toss market and mark a winner", async () => {
         await new Promise(resolve => setTimeout(resolve, 1050));
@@ -293,7 +293,8 @@ describe("initialize program tests", () => {
                         receiver: owner.publicKey,
                         tokenProgram: TOKEN_PROGRAM_ID
                     }).signers([owner])
-                    .instruction()
+                    .rpc()
+                console.log("Tx1: ", ix1)
                 let ix2 = await program.methods.claim2()
                     .accountsPartial({
                         bet: bet2,
@@ -302,7 +303,8 @@ describe("initialize program tests", () => {
                         receiver: owner.publicKey,
                         tokenProgram: TOKEN_PROGRAM_ID
                     }).signers([owner])
-                    .instruction()
+                    .rpc()
+                console.log("Tx2: ", ix2)
                 let ix3 = await program.methods.claim2()
                     .accountsPartial({
                         bet: bet3,
@@ -311,24 +313,25 @@ describe("initialize program tests", () => {
                         receiver: anotherUser.publicKey,
                         tokenProgram: TOKEN_PROGRAM_ID
                     }).signers([owner])
-                    .instruction()
+                    .rpc()
+                console.log("Tx3: ", ix3)
 
-                const instructions: anchor.web3.TransactionInstruction[] = [
-                    ix1, ix2,
-                    // ix3
-                ]
-                let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
-                const messageV0 = new anchor.web3.TransactionMessage({
-                    payerKey: owner.publicKey,
-                    recentBlockhash: blockhash,
-                    instructions: instructions
-                }).compileToV0Message()
-                const transaction = new anchor.web3.VersionedTransaction(messageV0)
-                transaction.sign([owner])
-                const tx = await provider.connection.sendTransaction(transaction)
-                const confirmation = await confirmTransaction(provider.connection, tx)
-                if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
-                console.log("Tx: ", tx)
+                // const instructions: anchor.web3.TransactionInstruction[] = [
+                //     ix1, ix2,
+                //     // ix3
+                // ]
+                // let blockhash = (await provider.connection.getLatestBlockhash()).blockhash
+                // const messageV0 = new anchor.web3.TransactionMessage({
+                //     payerKey: owner.publicKey,
+                //     recentBlockhash: blockhash,
+                //     instructions: instructions
+                // }).compileToV0Message()
+                // const transaction = new anchor.web3.VersionedTransaction(messageV0)
+                // transaction.sign([owner])
+                // const tx = await provider.connection.sendTransaction(transaction)
+                // const confirmation = await confirmTransaction(provider.connection, tx)
+                // if (confirmation.err) { throw new Error("❌ - Transaction not confirmed.") }
+                // console.log("Tx: ", tx)
             }
         } else {
             console.log("NO WINNER FOUND. REFUNDING ALL BET AMOUNTS")

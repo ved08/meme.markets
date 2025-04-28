@@ -98,13 +98,24 @@ impl<'info> ClaimTokenReward<'info> {
             transfer(ctx, winner_share_amount)?;
             // self.market.total_mc -= winner_share_amount;
         }
+        let sol_in_for_allocation;
+        if is_winner {
+            sol_in_for_allocation = self.bet.amount
+        } else {
+            sol_in_for_allocation = self.bet.amount / 2
+        }
         let (tokens_to_send, refund_amount) = calculate_tokens_to_send(
-            self.bet.amount, 
-            self.market.total_mc,
-            self.market.total_tokens,
-            is_winner
+            sol_in_for_allocation, 
+            self.market.virtual_sol_reserve as u128,
+            self.market.total_tokens as u128,
+            is_winner,
         );
-
+        msg!("bet_amount: {}, sol_refund: {}", sol_in_for_allocation, refund_amount);
+        let net_sol = (sol_in_for_allocation).checked_sub(refund_amount).unwrap();
+        self.market.total_tokens -= tokens_to_send;
+        self.market.virtual_sol_reserve += net_sol;
+        
+        msg!("virtual_sol_cap: {}, total_tokens: {}", self.market.virtual_sol_reserve, self.market.total_tokens);
         if refund_amount > 0 {
             let signer_seeds: &[&[&[u8]]] = &[&[
                 b"vault",
@@ -150,7 +161,6 @@ impl<'info> ClaimTokenReward<'info> {
         if is_winner == false {
             option.liquidity -= self.bet.amount;
         }
-        self.market.total_tokens -= tokens_to_send;
         
         msg!("Tokens allocated: {}", tokens_to_send);
         self.bet.claimed = true;
