@@ -28,4 +28,6 @@ pub enum PumpstakeErrors {
     RefundOnly,
     #[msg("Incorrect revenue wallet. Please provide correct one")]
     IncorrectRevenueWallet,
+    #[msg("Incorrect ATA passed while creating coin")]
+    IncorrectAtaPassed,
 }

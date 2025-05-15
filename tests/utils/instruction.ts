@@ -221,7 +221,7 @@ export async function initialize(
         false,
         token1Program
     );
-
+    console.log("TOKEN ACCOUNT INRAY: ", creatorToken1.toBase58())
     const tx = await program.methods
         .proxyInitialize(initAmount.initAmount0, initAmount.initAmount1, new BN(0))
         .accountsPartial({

@@ -4,7 +4,8 @@ use anchor_lang::{
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{sync_native, transfer_checked, SyncNative, TransferChecked},
+    token::{sync_native, SyncNative},
+    token_2022::{transfer_checked, TransferChecked},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
@@ -23,19 +24,21 @@ pub struct TransferTokensToCreator<'info> {
         bump
     )]
     pub market: Box<Account<'info, PredictionMarket>>,
-    #[account(
-        seeds = [b"mint", market.key().as_ref()],
-        bump,
-        mint::authority = mint,
-        mint::decimals = 6
-    )]
-    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    // #[account(
+    //     seeds = [b"mint", market.key().as_ref()],
+    //     bump,
+    //     mint::authority = mint,
+    //     mint::decimals = 6
+    // )]
+    ///CHECK:
+    pub mint: UncheckedAccount<'info>,
     /// CHECK: this will be sol native mint id
     pub wsol_mint: UncheckedAccount<'info>,
     #[account(
         mut,
         associated_token::mint = mint,
-        associated_token::authority = market
+        associated_token::authority = market,
+        associated_token::token_program = token1_program
       )]
     pub token_reserve: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
@@ -49,18 +52,23 @@ pub struct TransferTokensToCreator<'info> {
         payer = signer,
         associated_token::mint = mint,
         associated_token::authority = signer,
-        associated_token::token_program = token_program,
+        associated_token::token_program = token1_program,
     )]
     pub creator_token_account: InterfaceAccount<'info, TokenAccount>,
+    ///CHECK:
+    // pub creator_token_account: UncheckedAccount<'info>,
     #[account(
         init_if_needed,
         payer = signer,
         associated_token::mint = wsol_mint,
         associated_token::authority = signer,
+        associated_token::token_program = token0_program,
+
     )]
     pub creator_wsol_account: InterfaceAccount<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token0_program: Interface<'info, TokenInterface>,
+    pub token1_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
@@ -87,7 +95,7 @@ impl<'info> TransferTokensToCreator<'info> {
         transfer(ctx, balance)?;
 
         let ctx = CpiContext::new(
-            self.token_program.to_account_info(),
+            self.token0_program.to_account_info(),
             SyncNative {
                 account: self.creator_wsol_account.to_account_info(),
             },
@@ -109,9 +117,9 @@ impl<'info> TransferTokensToCreator<'info> {
         ];
         let signer = [&seeds[..]];
         let ctx =
-            CpiContext::new_with_signer(self.token_program.to_account_info(), accounts, &signer);
+            CpiContext::new_with_signer(self.token1_program.to_account_info(), accounts, &signer);
         let tokens_to_send = self.token_reserve.amount;
-        transfer_checked(ctx, tokens_to_send, self.mint.decimals)?;
+        transfer_checked(ctx, tokens_to_send, 6)?;
         emit!(TokenDataForRaydium {
             wsol_amount: balance,
             token_amount: tokens_to_send,

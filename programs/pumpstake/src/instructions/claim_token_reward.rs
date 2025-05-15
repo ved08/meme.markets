@@ -26,15 +26,17 @@ pub struct ClaimTokenReward<'info> {
     ///CHECK: This will be validated in the program
     #[account(mut)]
     pub receiver: UncheckedAccount<'info>,
-    #[account(
-        seeds = [b"mint", market.key().as_ref()],
-        bump,
-    )]
-    pub mint: InterfaceAccount<'info, Mint>,
+    // #[account(
+    //     seeds = [b"mint", market.key().as_ref()],
+    //     bump,
+    // )]
+    ///CHECK:
+    pub mint: UncheckedAccount<'info>,
     #[account(
         mut,
         associated_token::mint = mint,
-        associated_token::authority = market
+        associated_token::authority = market,
+        associated_token::token_program = token_program,
       )]
     pub token_reserve: InterfaceAccount<'info, TokenAccount>,
     #[account(
@@ -153,7 +155,7 @@ impl<'info> ClaimTokenReward<'info> {
             accounts,
             &signer,
         );
-        transfer_checked(ctx, tokens_to_send, self.mint.decimals)?;
+        transfer_checked(ctx, tokens_to_send, 6)?;
 
         let option = self.market.market_options.iter_mut()
         .find(|opt| opt.option_id == self.bet.option).unwrap();

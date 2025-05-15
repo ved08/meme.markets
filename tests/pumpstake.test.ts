@@ -3,7 +3,7 @@ import { Program, BN } from "@coral-xyz/anchor";
 import { Pumpstake } from "../target/types/pumpstake";
 import { randomBytes } from "crypto"
 import { str, struct, u64, u8 } from "@coral-xyz/borsh"
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getAccount, getAssociatedTokenAddress, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAccount, getAssociatedTokenAddress, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, tokenGroupMemberInitialize } from "@solana/spl-token";
 import { configAddress } from "./config";
 import { initialize } from "./utils";
 describe("initialize program tests", () => {
@@ -27,6 +27,8 @@ describe("initialize program tests", () => {
         website: "x.com",
         telegram: "telegram.org",
     }
+    const mint = anchor.web3.Keypair.generate()
+
 
     let seed = new anchor.BN(randomBytes(8)) // this is for coin toss bet
     let seed2 = new anchor.BN(randomBytes(8)) // this is for 5 options bet(polymarket)
@@ -201,30 +203,37 @@ describe("initialize program tests", () => {
         const data = await program.account.predictionMarket.fetch(market)
         if (data.graduate && data.winnerPresent) {
             console.log("-------------CREATING A COIN----------------")
-            const mint = anchor.web3.PublicKey.findProgramAddressSync(
-                [Buffer.from("mint"), market.toBuffer()],
-                program.programId
-            )[0]
+            // const mint = anchor.web3.PublicKey.findProgramAddressSync(
+            //     [Buffer.from("mint"), market.toBuffer()],
+            //     program.programId
+            // )[0]
             const [metadataAddress, _] = anchor.web3.PublicKey.findProgramAddressSync(
                 [
                     Buffer.from("metadata"),
                     TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-                    mint.toBuffer(),
+                    mint.publicKey.toBuffer(),
                 ],
                 TOKEN_METADATA_PROGRAM_ID
             );
             console.log("Metadata account is: ", metadataAddress.toBase58())
+            console.log("Mint account is: ", mint.publicKey.toBase58())
+            const tokenReserve = getAssociatedTokenAddressSync(mint.publicKey, market, true, TOKEN_2022_PROGRAM_ID)
+            console.log("Token reserve is: ", tokenReserve.toBase58())
+
             let tx1 = await program.methods.createCoin()
                 .accountsPartial({
                     market,
-                    mint,
+                    mint: mint.publicKey,
                     metadata: metadataAddress,
+                    revenue: new anchor.web3.PublicKey("GmkqS3uguupCzEbwcWYnRrhtSvNZj2ycUWWSCE4QHedr"),
+                    tokenReserve,
                     signer: owner.publicKey,
-                    tokenProgram: TOKEN_PROGRAM_ID,
+                    tokenProgram: TOKEN_2022_PROGRAM_ID,
                     tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                    sysvarProgram: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY
                 })
-                .signers([owner])
+                .signers([owner, mint])
                 .rpc()
             console.log("created and minted coins at reserve", tx1);
         } else {
@@ -291,7 +300,8 @@ describe("initialize program tests", () => {
                         marketCreator: marketCreator.publicKey,
                         market,
                         receiver: owner.publicKey,
-                        tokenProgram: TOKEN_PROGRAM_ID
+                        tokenProgram: TOKEN_2022_PROGRAM_ID,
+                        mint: mint.publicKey
                     }).signers([owner])
                     .rpc()
                 console.log("Tx1: ", ix1)
@@ -301,7 +311,8 @@ describe("initialize program tests", () => {
                         market,
                         marketCreator: marketCreator.publicKey,
                         receiver: owner.publicKey,
-                        tokenProgram: TOKEN_PROGRAM_ID
+                        tokenProgram: TOKEN_2022_PROGRAM_ID,
+                        mint: mint.publicKey
                     }).signers([owner])
                     .rpc()
                 console.log("Tx2: ", ix2)
@@ -311,7 +322,8 @@ describe("initialize program tests", () => {
                         market,
                         marketCreator: marketCreator.publicKey,
                         receiver: anotherUser.publicKey,
-                        tokenProgram: TOKEN_PROGRAM_ID
+                        tokenProgram: TOKEN_2022_PROGRAM_ID,
+                        mint: mint.publicKey
                     }).signers([owner])
                     .rpc()
                 console.log("Tx3: ", ix3)
@@ -380,18 +392,20 @@ describe("initialize program tests", () => {
             [Buffer.from("market"), marketCreator.publicKey.toBuffer(), seed.toArrayLike(Buffer, "le", 8)],
             program.programId
         )
-        const mint = anchor.web3.PublicKey.findProgramAddressSync(
-            [Buffer.from("mint"), market.toBuffer()],
-            program.programId
-        )[0]
+        // const mint = anchor.web3.PublicKey.findProgramAddressSync(
+        //     [Buffer.from("mint"), market.toBuffer()],
+        //     program.programId
+        // )[0]
         const wsolMint = new anchor.web3.PublicKey("So11111111111111111111111111111111111111112")
 
         // const eventListener = await program.addEventListener("tokenDataForRaydium", async (e, slot) => {
         // console.log("Event data got: ", e.tokenAmount, e.wsolAmount, e)
 
         try {
-            const tokenAccount = getAssociatedTokenAddressSync(mint, market, true)
-            const tokenBalance = (await getAccount(provider.connection, tokenAccount)).amount.toString()
+            const tokenAccount = getAssociatedTokenAddressSync(mint.publicKey, market, true, TOKEN_2022_PROGRAM_ID)
+            const creatorTokenAccount = getAssociatedTokenAddressSync(mint.publicKey, owner.publicKey, false, TOKEN_2022_PROGRAM_ID)
+            const tokenBalance = (await getAccount(provider.connection, tokenAccount, "confirmed", TOKEN_2022_PROGRAM_ID)).amount.toString()
+            // console.log("OTKEN ACCOIUNT HERE: ", tokenAccount.toBase58(), tokenBalance)
             const marketVault = anchor.web3.PublicKey.findProgramAddressSync(
                 [Buffer.from("vault"), market.toBuffer()],
                 program.programId
@@ -404,22 +418,26 @@ describe("initialize program tests", () => {
                     marketCreator: marketCreator.publicKey,
                     market,
                     wsolMint,
-                    mint,
-                    tokenProgram: TOKEN_PROGRAM_ID,
+                    creatorTokenAccount,
+                    mint: mint.publicKey,
+                    token0Program: TOKEN_PROGRAM_ID,
+                    token1Program: TOKEN_2022_PROGRAM_ID,
                     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
                 })
                 .signers([owner])
                 .rpc()
 
             console.log("Transferred tokens to creator: ", tx1)
+            const creatorToken = getAssociatedTokenAddressSync(mint.publicKey, owner.publicKey, false, TOKEN_2022_PROGRAM_ID)
+            console.log("TOKEN ACCOUNT IN TESTS: ", creatorToken.toBase58())
             const { poolAddress, cpSwapPoolState, tx } = await initialize(
                 program,
                 owner.publicKey,
                 configAddress,
                 wsolMint,
                 TOKEN_PROGRAM_ID,
-                mint,
-                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                TOKEN_2022_PROGRAM_ID,
                 { initAmount0: new anchor.BN(marketVaultBalance), initAmount1: new anchor.BN(tokenBalance) }
             );
             console.log("created raydium pool, ", tx)

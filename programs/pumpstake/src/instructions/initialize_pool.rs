@@ -74,6 +74,8 @@ pub struct ProxyInitialize<'info> {
         mut,
         token::mint = token_0_mint,
         token::authority = creator,
+        token::token_program = token_0_program
+        
     )]
     pub creator_token_0: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -82,6 +84,7 @@ pub struct ProxyInitialize<'info> {
         mut,
         token::mint = token_1_mint,
         token::authority = creator,
+        token::token_program = token_1_program
     )]
     pub creator_token_1: Box<InterfaceAccount<'info, TokenAccount>>,
 
