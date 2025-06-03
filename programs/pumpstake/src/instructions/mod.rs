@@ -8,8 +8,6 @@ pub use initialize_pool::*;
 pub use resolve_market::*;
 pub mod claim_reward;
 pub use claim_reward::*;
-pub mod create_bet_amm;
-pub use create_bet_amm::*;
 pub mod claim_token_reward;
 pub use claim_token_reward::*;
 pub mod create_coin;

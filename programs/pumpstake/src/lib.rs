@@ -7,7 +7,7 @@ mod error;
 mod events;
 mod utils;
 use error::PumpstakeErrors;
-declare_id!("A8p7WQhmsfehVug9nJzYMwPgqjx4gxGNBmWGJsbCWcVq");
+declare_id!("GX3a35f4jkcoZCzxqwGyr4ryRch2dhC3Fe8SoEb6fg8S");
 
 #[program]
 pub mod pumpstake {
